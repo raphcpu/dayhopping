@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
+import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { requestTrackingPermissions, syncTracking, type TrackingState, watchForeground } from '@/lib/tracking';
 import type { Checkin, Expense, LiveLocation, Media, Member, Message, Profile, Report, Round, Settlement, Station } from '@/lib/types';
@@ -119,7 +119,7 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- lädt Daten vom Server; der Zustand wird erst nach der Antwort gesetzt
     reload();
-    AsyncStorage.getItem(`dayhop:gelesen:${roundId}`).then((v) => v && setLastRead(v));
+    storage.getItem(`dayhop:gelesen:${roundId}`).then((v) => v && setLastRead(v));
 
     const timers: Record<string, ReturnType<typeof setTimeout>> = {};
     const refetch = (table: keyof typeof loaders) => {
@@ -221,7 +221,7 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
     const now = new Date().toISOString();
     const stamp = newest.current && newest.current > now ? newest.current : now;
     setLastRead(stamp);
-    AsyncStorage.setItem(`dayhop:gelesen:${roundId}`, stamp);
+    storage.setItem(`dayhop:gelesen:${roundId}`, stamp);
   }, [roundId]);
 
   const value: RoundContext = {

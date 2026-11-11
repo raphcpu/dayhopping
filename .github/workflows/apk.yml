@@ -107,8 +107,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api: [29, 34, 36]
-        de: ['1']
+        api: [29, 34, 35, 36]
+        de: ['', '1']
     env:
       APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
       SMOKE_DE: ${{ matrix.de }}
