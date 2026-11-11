@@ -7,6 +7,17 @@ APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
 mkdir -p smoke
 adb wait-for-device
 adb shell settings put global window_animation_scale 0
+if [ "${SMOKE_DE:-}" = "1" ]; then
+  # Wie ein deutsches Handy: Sprache, Zeitzone, Dunkelmodus
+  adb root >/dev/null 2>&1; sleep 3; adb wait-for-device
+  adb shell "setprop persist.sys.locale de-DE; setprop persist.sys.timezone Europe/Berlin"
+  adb shell cmd uimode night yes
+  adb shell stop; adb shell start
+  adb wait-for-device
+  until [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; do sleep 2; done
+  sleep 10
+  echo "SMOKE: Sprache $(adb shell getprop persist.sys.locale), Dunkelmodus $(adb shell cmd uimode night)"
+fi
 echo "SMOKE: Android $(adb shell getprop ro.build.version.release) / API $(adb shell getprop ro.build.version.sdk)"
 adb install -r "$APK" || { echo "SMOKE: INSTALLATION FEHLGESCHLAGEN"; exit 1; }
 adb logcat -c

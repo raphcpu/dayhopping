@@ -165,3 +165,22 @@ grant execute on all functions in schema public to authenticated;
 revoke execute on function public.handle_new_user(), public.on_checkin_insert(), public.on_message_insert(),
   public.on_report_insert(), public.send_push(uuid, uuid, text, text, boolean, jsonb, boolean) from authenticated;
 
+
+-- ----------------------------------------------------------------------------
+-- Absturz- und Fehlerberichte der App. Schreiben darf jede Installation (auch vor
+-- der Anmeldung), lesen nur der Betreiber im Dashboard (Table Editor → client_errors).
+-- ----------------------------------------------------------------------------
+
+create table public.client_errors (
+  id          bigint generated always as identity primary key,
+  created_at  timestamptz not null default now(),
+  user_id     uuid default auth.uid(),
+  fatal       boolean not null default false,
+  message     text not null check (char_length(message) <= 2000),
+  stack       text check (char_length(stack) <= 8000),
+  context     jsonb check (pg_column_size(context) <= 4000)
+);
+alter table public.client_errors enable row level security;
+create policy client_errors_insert on public.client_errors for insert to anon, authenticated
+  with check (user_id is null or user_id = auth.uid());
+grant insert on public.client_errors to anon, authenticated;

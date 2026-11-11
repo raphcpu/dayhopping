@@ -817,3 +817,22 @@ create policy avatar_objects_update on storage.objects for update to authenticat
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy avatar_objects_delete on storage.objects for delete to authenticated
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ----------------------------------------------------------------------------
+-- Absturz- und Fehlerberichte der App. Schreiben darf jede Installation (auch vor
+-- der Anmeldung), lesen nur der Betreiber im Dashboard (Table Editor → client_errors).
+-- ----------------------------------------------------------------------------
+
+create table public.client_errors (
+  id          bigint generated always as identity primary key,
+  created_at  timestamptz not null default now(),
+  user_id     uuid default auth.uid(),
+  fatal       boolean not null default false,
+  message     text not null check (char_length(message) <= 2000),
+  stack       text check (char_length(stack) <= 8000),
+  context     jsonb check (pg_column_size(context) <= 4000)
+);
+alter table public.client_errors enable row level security;
+create policy client_errors_insert on public.client_errors for insert to anon, authenticated
+  with check (user_id is null or user_id = auth.uid());
+grant insert on public.client_errors to anon, authenticated;

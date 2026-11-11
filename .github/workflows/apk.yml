@@ -107,9 +107,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api: [29, 31, 33, 35, 36]
+        api: [29, 34, 36]
+        de: ['1']
     env:
       APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
+      SMOKE_DE: ${{ matrix.de }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
