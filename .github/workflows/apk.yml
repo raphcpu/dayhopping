@@ -2,9 +2,10 @@
 # lokales Android Studio. Start: Reiter "Actions" → "Android-APK bauen" → "Run workflow".
 # Die fertige APK liegt danach unter "Artifacts" des Laufs.
 #
-# Nötige Secrets (Settings → Secrets and variables → Actions):
-#   EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY, GOOGLE_MAPS_API_KEY
+# Secrets (Settings → Secrets and variables → Actions):
+#   GOOGLE_MAPS_API_KEY                                  → ohne ihn bleibt die Karte leer
 # Optional:
+#   EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY → anderes Supabase-Projekt
 #   EAS_PROJECT_ID + GOOGLE_SERVICES_JSON_BASE64        → Push-Benachrichtigungen
 #   EXPO_PUBLIC_LEGAL_NAME / _ADDRESS / _EMAIL / _HOSTING_REGION → Betreiberangaben
 #   APP_IDENTIFIER                                       → eigene App-Kennung
@@ -22,15 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 75
     env:
-      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      # Öffentliche Werte des Supabase-Projekts "dayhop" (stecken ohnehin in jeder App). Secrets gleichen Namens haben Vorrang.
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL || 'https://fbjekdcvzfefwwnjlyrh.supabase.co' }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_oNs39mriXVQiLInCdfsTqw_LLlA7HB1' }}
       GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
       EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
       APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
       EXPO_PUBLIC_LEGAL_NAME: ${{ secrets.EXPO_PUBLIC_LEGAL_NAME }}
       EXPO_PUBLIC_LEGAL_ADDRESS: ${{ secrets.EXPO_PUBLIC_LEGAL_ADDRESS }}
       EXPO_PUBLIC_LEGAL_EMAIL: ${{ secrets.EXPO_PUBLIC_LEGAL_EMAIL }}
-      EXPO_PUBLIC_LEGAL_HOSTING_REGION: ${{ secrets.EXPO_PUBLIC_LEGAL_HOSTING_REGION }}
+      EXPO_PUBLIC_LEGAL_HOSTING_REGION: ${{ secrets.EXPO_PUBLIC_LEGAL_HOSTING_REGION || 'EU (Frankfurt)' }}
       GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -45,7 +47,9 @@ jobs:
           fehlt=""
           [ -z "$EXPO_PUBLIC_SUPABASE_URL" ] && fehlt="$fehlt EXPO_PUBLIC_SUPABASE_URL"
           [ -z "$EXPO_PUBLIC_SUPABASE_ANON_KEY" ] && fehlt="$fehlt EXPO_PUBLIC_SUPABASE_ANON_KEY"
-          [ -z "$GOOGLE_MAPS_API_KEY" ] && fehlt="$fehlt GOOGLE_MAPS_API_KEY"
+          if [ -z "$GOOGLE_MAPS_API_KEY" ]; then
+            echo "::warning::GOOGLE_MAPS_API_KEY fehlt: Die APK wird gebaut, aber die Karte bleibt leer, bis das Secret gesetzt und neu gebaut ist."
+          fi
           if [ -n "$fehlt" ]; then
             echo "::error::Diese Secrets fehlen:$fehlt (Settings → Secrets and variables → Actions)"
             exit 1
