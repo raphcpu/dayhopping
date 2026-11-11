@@ -7,13 +7,18 @@ APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
 mkdir -p smoke
 adb wait-for-device
 adb shell settings put global window_animation_scale 0
-adb install -r -g "$APK" || { echo "SMOKE: INSTALLATION FEHLGESCHLAGEN"; exit 1; }
+echo "SMOKE: Android $(adb shell getprop ro.build.version.release) / API $(adb shell getprop ro.build.version.sdk)"
+adb install -r "$APK" || { echo "SMOKE: INSTALLATION FEHLGESCHLAGEN"; exit 1; }
 adb logcat -c
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
 sleep 30
 adb exec-out screencap -p > smoke/start.png
 adb logcat -d -v brief > smoke/logcat.txt
 if adb shell pidof "$PKG" >/dev/null; then echo "SMOKE: APP LÄUFT"; else echo "SMOKE: APP NICHT MEHR AKTIV"; fi
+echo "----- Absturz -----"
+grep -A40 "FATAL EXCEPTION" smoke/logcat.txt | head -60
+grep -E "ReactNativeJS|unknown:ReactNative|libc.*Fatal signal|DEBUG +:" smoke/logcat.txt | head -40
+echo "----- Ende Absturz -----"
 echo "----- Fehler im Protokoll -----"
 grep -E "FATAL|AndroidRuntime|ReactNativeJS|ReactNative|Exception|Error|expo" smoke/logcat.txt | grep -v "^D/" | head -150
 echo "----- Ende -----"

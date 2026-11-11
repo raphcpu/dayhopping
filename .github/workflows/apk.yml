@@ -92,35 +92,41 @@ jobs:
           fi
           ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64 $sign
 
-      - name: KVM für den Emulator aktivieren
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - name: Starttest im Emulator
-        continue-on-error: true
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          arch: x86_64
-          target: google_apis
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          script: ./scripts/smoke-test.sh
-
-      - name: Starttest-Protokoll bereitstellen
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Starttest
-          path: smoke/
-          if-no-files-found: ignore
-
       - name: APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
           name: DayHop-APK
           path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+
+  # Startet die APK auf mehreren Android-Versionen und schreibt Absturzmeldungen ins Protokoll.
+  starttest:
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [29, 31, 33, 35, 36]
+    env:
+      APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: DayHop-APK
+          path: android/app/build/outputs/apk/release
+      - name: KVM für den Emulator aktivieren
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Starttest Android-API ${{ matrix.api }}
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: google_apis
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./scripts/smoke-test.sh
