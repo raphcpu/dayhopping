@@ -1,7 +1,7 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 // Schlüssel kommen aus .env (lokal) bzw. aus EAS-Umgebungsvariablen (Build).
-const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY ?? '';
+const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY || '';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -13,7 +13,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
   ios: {
-    bundleIdentifier: process.env.APP_IDENTIFIER ?? 'de.dayhop.app',
+    bundleIdentifier: process.env.APP_IDENTIFIER || 'de.dayhop.app',
     supportsTablet: false,
     infoPlist: {
       UIBackgroundModes: ['location', 'remote-notification'],
@@ -21,13 +21,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
-    package: process.env.APP_IDENTIFIER ?? 'de.dayhop.app',
+    package: process.env.APP_IDENTIFIER || 'de.dayhop.app',
     adaptiveIcon: {
       backgroundColor: '#FF5A36',
       foregroundImage: './assets/android-icon-foreground.png',
       monochromeImage: './assets/android-icon-monochrome.png',
     },
-    googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? undefined,
+    googleServicesFile: process.env.GOOGLE_SERVICES_JSON || undefined,
   },
   plugins: [
     'expo-router',
@@ -61,6 +61,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-video',
   ],
   extra: {
-    eas: { projectId: process.env.EAS_PROJECT_ID },
+    eas: { projectId: process.env.EAS_PROJECT_ID || undefined },
   },
 });
