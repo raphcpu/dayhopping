@@ -153,3 +153,15 @@ create policy reports_update on public.reports for update to authenticated
 
 alter table public.reports replica identity full;
 alter publication supabase_realtime add table public.reports;
+
+-- ----------------------------------------------------------------------------
+-- Ausführungsrechte: nichts ohne Anmeldung, Trigger- und Push-Funktionen gar nicht direkt
+-- ----------------------------------------------------------------------------
+
+alter function public.distance_m(double precision, double precision, double precision, double precision) set search_path = public;
+
+revoke execute on all functions in schema public from public, anon;
+grant execute on all functions in schema public to authenticated;
+revoke execute on function public.handle_new_user(), public.on_checkin_insert(), public.on_message_insert(),
+  public.on_report_insert(), public.send_push(uuid, uuid, text, text, boolean, jsonb, boolean) from authenticated;
+

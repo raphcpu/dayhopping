@@ -4,7 +4,7 @@
 -- ============================================================================
 
 create extension if not exists pgcrypto;
-create extension if not exists pg_net;
+create extension if not exists pg_net with schema extensions;
 
 -- ----------------------------------------------------------------------------
 -- Tabellen
@@ -763,6 +763,17 @@ returns void language sql security definer set search_path = public as $$
   insert into push_tokens (token, user_id, platform) values (p_token, auth.uid(), p_platform)
   on conflict (token) do update set user_id = auth.uid(), platform = excluded.platform, updated_at = now();
 $$;
+
+-- ----------------------------------------------------------------------------
+-- Ausführungsrechte: nichts ohne Anmeldung, Trigger- und Push-Funktionen gar nicht direkt
+-- ----------------------------------------------------------------------------
+
+alter function public.distance_m(double precision, double precision, double precision, double precision) set search_path = public;
+
+revoke execute on all functions in schema public from public, anon;
+grant execute on all functions in schema public to authenticated;
+revoke execute on function public.handle_new_user(), public.on_checkin_insert(), public.on_message_insert(),
+  public.on_report_insert(), public.send_push(uuid, uuid, text, text, boolean, jsonb, boolean) from authenticated;
 
 -- ----------------------------------------------------------------------------
 -- Realtime
