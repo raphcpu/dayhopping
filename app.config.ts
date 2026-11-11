@@ -31,6 +31,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    [
+      'expo-build-properties',
+      {
+        // R8 entfernte beim Verkleinern die Datenbankklasse von WorkManager (Hintergrund-Ortung,
+        // Push): Die App stürzte sofort beim Start ab. Ohne Verkleinern ist die APK etwas größer,
+        // aber nichts wird mehr versehentlich entfernt.
+        android: {
+          enableMinifyInReleaseBuilds: false,
+          enableShrinkResourcesInReleaseBuilds: false,
+          extraProguardRules: '-keep class * extends androidx.room.RoomDatabase { <init>(); }\n-keep class androidx.work.** { *; }',
+        },
+      },
+    ],
     'expo-font',
     ['expo-splash-screen', { backgroundColor: '#FF5A36', image: './assets/splash-icon.png', imageWidth: 160 }],
     [
