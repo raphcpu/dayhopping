@@ -3,8 +3,10 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Dimensions, FlatList, Image, Linking, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, Text, View } from 'react-native';
 import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import { MapMissing } from '@/components/MapMissing';
 import { TrackingSheet } from '@/components/TrackingSheet';
 import { Avatar, AvatarStack, Body, Button, Card, Heading, IconButton } from '@/components/ui';
+import { mapsConfigured } from '@/lib/config';
 import { errorText, formatAgo, formatTime, initials } from '@/lib/format';
 import { stationStats } from '@/lib/stats';
 import { avatarUrl, supabase } from '@/lib/supabase';
@@ -153,6 +155,7 @@ export default function MapTab() {
 
   return (
     <View style={{ flex: 1 }}>
+      {!mapsConfigured ? <MapMissing /> : (
       <MapView
         ref={map}
         provider={PROVIDER_GOOGLE}
@@ -197,6 +200,7 @@ export default function MapTab() {
           );
         })}
       </MapView>
+      )}
 
       {/* Oben: Durchsage und Ortungsstatus */}
       <View pointerEvents="box-none" style={{ position: 'absolute', top: space.s, left: space.m, right: space.m, gap: space.s }}>

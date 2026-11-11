@@ -5,7 +5,9 @@ import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, View } fro
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateField } from '@/components/DateField';
+import { MapMissing } from '@/components/MapMissing';
 import { Body, Button, Chip, Field, SectionLabel } from '@/components/ui';
+import { mapsConfigured } from '@/lib/config';
 import { errorText, parseDay } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import { radius, space, useColors } from '@/lib/theme';
@@ -130,6 +132,7 @@ export default function StationScreen() {
             </View>
             <Button title="Suchen" variant="soft" onPress={search} loading={busy === 'suche'} />
           </View>
+          {!mapsConfigured ? <MapMissing compact /> : (
           <View style={{ height: 260, borderRadius: radius.m, overflow: 'hidden', borderWidth: 1, borderColor: c.line }}>
             <MapView ref={map} provider={PROVIDER_GOOGLE} style={{ flex: 1 }} initialRegion={start} toolbarEnabled={false}
               onLongPress={(e) => place(e.nativeEvent.coordinate)} onPoiClick={(e) => { place(e.nativeEvent.coordinate); if (!name.trim()) setName(e.nativeEvent.name.split('\n')[0]); }}>
@@ -137,6 +140,8 @@ export default function StationScreen() {
               {pin && <Circle center={pin} radius={radiusM} strokeColor={c.accent} strokeWidth={1.5} fillColor="rgba(255,90,54,0.16)" />}
             </MapView>
           </View>
+          )}
+          {pin && <Body muted small>Punkt gesetzt: {pin.latitude.toFixed(5)}, {pin.longitude.toFixed(5)}</Body>}
           <Body muted small>Lange auf die Karte tippen setzt den Punkt. Du kannst die Nadel auch verschieben oder einen Ort auf der Karte antippen.</Body>
           <Button small variant="soft" icon="locate" title="Meinen Standort nehmen" onPress={here} loading={busy === 'hier'} style={{ alignSelf: 'flex-start' }} />
         </View>

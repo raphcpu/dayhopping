@@ -90,7 +90,33 @@ jobs:
           else
             echo "::warning::Kein eigener Signaturschlüssel hinterlegt. Die APK wird mit dem öffentlichen Test-Schlüssel signiert: zum Ausprobieren in Ordnung, vor der Weitergabe an die Gruppe bitte ANDROID_KEYSTORE_* setzen (siehe README)."
           fi
-          ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a $sign
+          ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64 $sign
+
+      - name: KVM für den Emulator aktivieren
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Starttest im Emulator
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./scripts/smoke-test.sh
+
+      - name: Starttest-Protokoll bereitstellen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Starttest
+          path: smoke/
+          if-no-files-found: ignore
 
       - name: APK bereitstellen
         uses: actions/upload-artifact@v4

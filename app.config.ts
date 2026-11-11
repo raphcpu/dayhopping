@@ -62,5 +62,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   extra: {
     eas: { projectId: process.env.EAS_PROJECT_ID || undefined },
+    // Ohne Schlüssel stürzt Google Maps beim Anzeigen ab: Die App zeigt dann einen Hinweis statt der Karte.
+    mapsConfigured: googleMapsApiKey.length > 0,
   },
 });
