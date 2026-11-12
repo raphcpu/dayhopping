@@ -115,6 +115,11 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
     return state;
   }, []);
 
+  // Zuletzt geöffneten Hop merken: Beim nächsten App-Start geht es direkt dorthin
+  useEffect(() => {
+    if (userId) storage.setItem(`dayhop:letzter-hop:${userId}`, roundId);
+  }, [roundId, userId]);
+
   // Erstes Laden, Echtzeit-Abo, Auffrischen beim Zurückkehren in die App
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- lädt Daten vom Server; der Zustand wird erst nach der Antwort gesetzt

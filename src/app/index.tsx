@@ -6,12 +6,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateField } from '@/components/DateField';
 import { Avatar, Body, Button, Card, EmptyState, Field, Heading, Sheet, StatusPill } from '@/components/ui';
 import { errorText, formatDay, toDay } from '@/lib/format';
+import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { space, useColors } from '@/lib/theme';
 import type { Round } from '@/lib/types';
 import { useAuth } from '@/providers/AuthProvider';
 
 type Row = Round & { memberCount: number; role: string };
+
+// Nur beim ersten Anzeigen nach dem App-Start direkt in einen Hop springen,
+// nicht wenn man bewusst zur Übersicht zurückkehrt.
+let autoOpenDone = false;
 
 export default function Home() {
   const c = useColors();
@@ -40,7 +45,15 @@ export default function Home() {
     const rank = { aktiv: 0, geplant: 1, beendet: 2 } as const;
     rows.sort((a, b) => rank[a.status] - rank[b.status] || (a.status === 'beendet' ? b.day.localeCompare(a.day) : a.day.localeCompare(b.day)));
     setRounds(rows);
-  }, [userId]);
+
+    if (!autoOpenDone) {
+      autoOpenDone = true;
+      // Laufender Hop zuerst, sonst der zuletzt geöffnete (sofern nicht beendet)
+      const last = await storage.getItem(`dayhop:letzter-hop:${userId}`);
+      const target = rows.find((r) => r.status === 'aktiv') ?? rows.find((r) => r.id === last && r.status !== 'beendet');
+      if (target) router.push(`/round/${target.id}`);
+    }
+  }, [userId, router]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 

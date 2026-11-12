@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Dimensions, FlatList, Image, Linking, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Dimensions, FlatList, Image, Linking, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, Text, View } from 'react-native';
 import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { MapMissing } from '@/components/MapMissing';
 import { showProfile } from '@/components/ProfileSheet';
 import { StationGlow } from '@/components/StationGlow';
 import { TrackingSheet } from '@/components/TrackingSheet';
-import { Avatar, AvatarStack, Body, Button, Card, Heading, IconButton } from '@/components/ui';
+import { AvatarStack, Body, Button, Card, Heading, IconButton } from '@/components/ui';
 import { useBatteryOptimized } from '@/lib/battery';
 import { mapsConfigured } from '@/lib/config';
 import { glowLevel, stationColor, withAlpha } from '@/lib/stationColors';
@@ -287,20 +287,8 @@ export default function MapTab() {
         </View>
       </View>
 
-      {/* Unten: Personen und Stationen */}
+      {/* Unten: Stationsinfo nach Antippen */}
       <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: space.m, gap: space.s }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.l, gap: 6 }}>
-          {members.map((m) => {
-            const l = locations.find((x) => x.user_id === m.user_id);
-            return (
-              <Pressable key={m.user_id} onPress={() => showProfile(m.user_id, { onShowOnMap: () => focusPerson(m.user_id) })}
-                onLongPress={() => focusPerson(m.user_id)} accessibilityRole="button" accessibilityLabel={`Profil von ${m.profile.display_name}`}
-                style={{ padding: 3, borderRadius: 26, backgroundColor: c.card, elevation: 2, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } }}>
-                <Avatar profile={m.profile} size={40} dimmed={!l || now - new Date(l.recorded_at).getTime() > STALE_MS} />
-              </Pressable>
-            );
-          })}
-        </ScrollView>
 
         {stations.length === 0 ? (
           <Card style={{ marginHorizontal: space.l, gap: space.s }}>

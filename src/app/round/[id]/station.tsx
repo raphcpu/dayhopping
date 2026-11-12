@@ -31,6 +31,9 @@ export default function StationScreen() {
   const [pin, setPin] = useState<{ latitude: number; longitude: number } | null>(existing ? { latitude: existing.lat, longitude: existing.lng } : null);
   const [time, setTime] = useState<Date | null>(existing?.planned_at ? new Date(existing.planned_at) : null);
   const [note, setNote] = useState(existing?.note ?? '');
+  // Stationsnummer (1 = erste Station der Route)
+  const count = existing ? stations.length : stations.length + 1;
+  const [number, setNumber] = useState(() => (existing ? stations.findIndex((s) => s.id === existing.id) + 1 : count));
   // Farben anderer Stationen dieses Hops sind vergeben
   const taken = useMemo(
     () => new Set(stations.filter((s) => s.id !== existing?.id && s.color).map((s) => s.color!.toUpperCase())),
@@ -109,11 +112,25 @@ export default function StationScreen() {
     }
     const row = { name: name.trim(), address: address.trim() || null, lat: pin.latitude, lng: pin.longitude, radius_m: STATION_RADIUS_M, planned_at: plannedAt, note: note.trim() || null, color };
     setBusy('speichern');
-    const { error } = existing
-      ? await supabase.from('stations').update(row).eq('id', existing.id)
-      : await supabase.from('stations').insert({ ...row, round_id: round.id, position: Math.max(0, ...stations.map((s) => s.position)) + 1 });
+    const { data: saved, error } = existing
+      ? await supabase.from('stations').update(row).eq('id', existing.id).select('id').single()
+      : await supabase.from('stations').insert({ ...row, round_id: round.id, position: Math.max(0, ...stations.map((s) => s.position)) + 1 }).select('id').single();
+    if (error || !saved) {
+      setBusy(null);
+      return setError(error?.code === '23505' ? 'Diese Farbe hat gerade eine andere Station bekommen. Bitte wähle eine andere.' : errorText(error));
+    }
+    // Gewählte Nummer anwenden: Station an diese Stelle der Route schieben
+    const others = stations.filter((s) => s.id !== saved.id).map((s) => s.id);
+    const order = [...others.slice(0, number - 1), saved.id, ...others.slice(number - 1)];
+    const currentOrder = [...stations.map((s) => s.id), ...(existing ? [] : [saved.id])];
+    if (order.join() !== currentOrder.join()) {
+      const { error: orderError } = await supabase.rpc('reorder_stations', { p_round: round.id, p_ids: order });
+      if (orderError) {
+        setBusy(null);
+        return setError(`Gespeichert, aber die Nummer ließ sich nicht ändern: ${errorText(orderError)}`);
+      }
+    }
     setBusy(null);
-    if (error) return setError(error.code === '23505' ? 'Diese Farbe hat gerade eine andere Station bekommen. Bitte wähle eine andere.' : errorText(error));
     router.back();
   };
 
@@ -155,6 +172,23 @@ export default function StationScreen() {
         </View>
 
         <Field label="Adresse (optional)" value={address} onChangeText={setAddress} placeholder="Wird beim Setzen des Punkts ausgefüllt" maxLength={160} />
+
+        <View>
+          <SectionLabel>Stationsnummer</SectionLabel>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.s }}>
+            {Array.from({ length: count }, (_, k) => k + 1).map((n) => {
+              const on = n === number;
+              return (
+                <Pressable key={n} onPress={() => setNumber(n)} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={`Station Nummer ${n}`}
+                  style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: on ? c.ink : c.card, borderWidth: 1.5, borderColor: on ? c.ink : c.line }}>
+                  <Text style={{ fontSize: 18, fontWeight: '800', color: on ? c.bg : c.ink }}>{n}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={{ fontSize: 13, color: c.muted, marginTop: space.s }}>Reihenfolge auf der Route. Die anderen Stationen rücken entsprechend auf.</Text>
+        </View>
 
         <View>
           <SectionLabel>Leuchtfarbe</SectionLabel>
