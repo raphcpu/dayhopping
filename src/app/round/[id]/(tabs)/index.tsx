@@ -11,6 +11,7 @@ import { TrackingSheet } from '@/components/TrackingSheet';
 import { AvatarStack, Body, Button, Card, Heading, IconButton } from '@/components/ui';
 import { useBatteryOptimized } from '@/lib/battery';
 import { mapsConfigured } from '@/lib/config';
+import { LIVE_GREEN, OFFLINE_GREY } from '@/lib/presence';
 import { glowLevel, gradientRoute, stationColor, withAlpha } from '@/lib/stationColors';
 import { storage } from '@/lib/storage';
 import { formatTime, initials } from '@/lib/format';
@@ -23,7 +24,7 @@ import { useRound } from '@/providers/RoundProvider';
 
 const CARD_GAP = 10;
 const CARD_WIDTH = Math.min(Dimensions.get('window').width - 56, 420);
-const STALE_MS = 5 * 60_000;
+const STALE_MS = 5 * 60_000; // wie LIVE_MS
 
 /** Avatar als Kartenmarker. Zeichnet nur neu, bis das Bild geladen ist (schont den Akku). */
 function usePersonMarker({ profile, stale, mine }: { profile: Profile; stale: boolean; mine: boolean }) {
@@ -32,10 +33,11 @@ function usePersonMarker({ profile, stale, mine }: { profile: Profile; stale: bo
   return {
     tracks: !loaded,
     view: (
-      <View style={{ alignItems: 'center', opacity: stale ? 0.55 : 1 }}>
-        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: profile.color, borderWidth: 3, borderColor: mine ? '#1E1B16' : '#fff',
-          alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          {url ? <Image source={{ uri: url }} style={{ width: 44, height: 44 }} onLoad={() => setLoaded(true)} onError={() => setLoaded(true)} /> : (
+      <View style={{ alignItems: 'center', opacity: stale ? 0.5 : 1 }}>
+        {/* Grüner Rand = live, grau = länger kein Standort */}
+        <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: stale ? OFFLINE_GREY : profile.color, borderWidth: 3.5,
+          borderColor: stale ? OFFLINE_GREY : LIVE_GREEN, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          {url ? <Image source={{ uri: url }} style={{ width: 46, height: 46 }} onLoad={() => setLoaded(true)} onError={() => setLoaded(true)} /> : (
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>{initials(profile.display_name)}</Text>
           )}
         </View>
@@ -61,7 +63,7 @@ export default function MapTab() {
   const c = useColors();
   const router = useRouter();
   const { userId } = useAuth();
-  const { round, stations, locations, checkins, members, messages, me, isOrganizer, profileOf, tracking } = useRound();
+  const { round, stations, locations, checkins, members, messages, me, isOrganizer, profileOf, tracking, isLive } = useRound();
   const map = useRef<MapView>(null);
   const list = useRef<FlatList>(null);
   const [selected, setSelected] = useState(0);
@@ -213,11 +215,12 @@ export default function MapTab() {
           const col = stationColor(s, i);
           const on = i === selected;
           const profiles = present.map(profileOf);
+          const live = present.map((uid) => isLive(uid));
           // Neu zeichnen, wenn sich Personen, Auswahl, Haken oder Farbe ändern
-          const key = `${s.id}-${i}-${on}-${myVisited.has(s.id)}-${col}-${profiles.map((p) => `${p.id}:${p.avatar_path}`).join(',')}`;
+          const key = `${s.id}-${i}-${on}-${myVisited.has(s.id)}-${col}-${profiles.map((p, k) => `${p.id}:${p.avatar_path}:${live[k]}`).join(',')}`;
           return (
             <StationMarker key={key} lat={s.lat} lng={s.lng} number={i + 1} color={col}
-              size={glowLevel(present.length).markerSize + (on ? 6 : 0)} visited={myVisited.has(s.id)} selected={on} present={profiles}
+              size={glowLevel(present.length).markerSize + (on ? 6 : 0)} visited={myVisited.has(s.id)} selected={on} present={profiles} live={live}
               onPress={() => { focusStation(i, false); setCardOpen(true); }}
               onPetalPress={(uid) => showProfile(uid, { onShowOnMap: () => focusPerson(uid) })} />
           );

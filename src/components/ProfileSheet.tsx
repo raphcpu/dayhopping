@@ -27,7 +27,7 @@ export function ProfileHost() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const { userId: me, block } = useAuth();
-  const { round, members, stations, checkins, locations, profileOf } = useRound();
+  const { round, members, stations, checkins, locations, profileOf, isLive } = useRound();
   const [open, setOpen] = useState<Open | null>(null);
   const [visible, setVisible] = useState(false);
   const [fullImage, setFullImage] = useState(false);
@@ -75,7 +75,7 @@ export function ProfileHost() {
         <View style={{ alignItems: 'center', gap: space.m }}>
           <Pressable onPress={() => url && setFullImage(true)} disabled={!url} accessibilityRole="imagebutton"
             accessibilityLabel={url ? `Profilbild von ${p.display_name} groß anzeigen` : undefined}>
-            <Avatar profile={p} size={168} />
+            <Avatar profile={p} size={168} live={isLive(uid)} />
             {url && (
               <View style={{ position: 'absolute', right: 6, bottom: 6, width: 36, height: 36, borderRadius: 18, backgroundColor: c.card,
                 alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.line }}>

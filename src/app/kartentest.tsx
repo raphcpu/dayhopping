@@ -29,6 +29,7 @@ export default function MapTestScreen() {
               { id: 'b', display_name: 'Ben', avatar_path: null, color: '#2F6FDE' },
               { id: 'c', display_name: 'Cem Yilmaz', avatar_path: null, color: '#E8590C' },
             ]}
+            live={[true, false, true]}
             onPress={() => setStatus('STATION ANGETIPPT')} onPetalPress={(id) => setStatus(`BLATT ${id} ANGETIPPT`)} />
           <Circle center={{ latitude: 53.5605, longitude: 9.981 }} radius={120} fillColor="rgba(91,61,245,0.25)" strokeColor="#5B3DF5" />
         </MapView>

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Image, Text, View } from 'react-native';
 import { Marker } from 'react-native-maps';
 import { initials } from '@/lib/format';
+import { LIVE_GREEN, OFFLINE_GREY } from '@/lib/presence';
 import { avatarUrl } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
 
@@ -11,6 +12,8 @@ const MAX_PETALS = 12;
 type Props = {
   lat: number; lng: number; number: number; color: string; size: number;
   visited: boolean; selected: boolean; present: Profile[];
+  /** je Person in `present`: sendet sie gerade Standort? */
+  live?: boolean[];
   onPress: () => void;
   onPetalPress: (userId: string) => void;
 };
@@ -20,7 +23,7 @@ type Props = {
  * Avatare aller, die gerade dort eingecheckt sind. Jedes Blütenblatt ist ein eigener
  * Marker (am selben Punkt, per Anker versetzt), damit es einzeln antippbar ist.
  */
-export function StationMarker({ lat, lng, number, color, size, visited, selected, present, onPress, onPetalPress }: Props) {
+export function StationMarker({ lat, lng, number, color, size, visited, selected, present, live, onPress, onPetalPress }: Props) {
   const n = present.length;
   const petal = n <= 6 ? 32 : n <= 10 ? 28 : 24;
   const ring = size / 2 + petal / 2 + 3; // Abstand Mitte → Mitte Blütenblatt
@@ -54,7 +57,8 @@ export function StationMarker({ lat, lng, number, color, size, visited, selected
         </View>
       </Marker>
       {shown.map((p, k) => (
-        <PetalMarker key={`${p.id}-${p.avatar_path}`} coordinate={coordinate} anchor={anchorFor(k)} profile={p} size={petal} ringColor={color}
+        <PetalMarker key={`${p.id}-${p.avatar_path}`} coordinate={coordinate} anchor={anchorFor(k)} profile={p} size={petal}
+          ringColor={live?.[k] === false ? OFFLINE_GREY : LIVE_GREEN} grey={live?.[k] === false}
           zIndex={selected ? 34 : 31} onPress={() => onPetalPress(p.id)} />
       ))}
       {extra > 0 && (
@@ -71,8 +75,8 @@ export function StationMarker({ lat, lng, number, color, size, visited, selected
   );
 }
 
-function PetalMarker({ coordinate, anchor, profile, size, ringColor, zIndex, onPress }: {
-  coordinate: { latitude: number; longitude: number }; anchor: { x: number; y: number }; profile: Profile; size: number; ringColor: string;
+function PetalMarker({ coordinate, anchor, profile, size, ringColor, grey, zIndex, onPress }: {
+  coordinate: { latitude: number; longitude: number }; anchor: { x: number; y: number }; profile: Profile; size: number; ringColor: string; grey?: boolean;
   zIndex: number; onPress: () => void;
 }) {
   const url = avatarUrl(profile.avatar_path);
@@ -80,8 +84,8 @@ function PetalMarker({ coordinate, anchor, profile, size, ringColor, zIndex, onP
   const [loaded, setLoaded] = useState(!url);
   return (
     <Marker coordinate={coordinate} anchor={anchor} tracksViewChanges={!loaded} zIndex={zIndex} onPress={onPress}>
-      <View style={{ width: size + 4, height: size + 4, alignItems: 'center', justifyContent: 'center' }}>
-        <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: profile.color, borderWidth: 2, borderColor: ringColor,
+      <View style={{ width: size + 4, height: size + 4, alignItems: 'center', justifyContent: 'center', opacity: grey ? 0.55 : 1 }}>
+        <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: grey ? OFFLINE_GREY : profile.color, borderWidth: 3, borderColor: ringColor,
           overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
           {url ? <Image source={{ uri: url }} style={{ width: size, height: size }} onLoad={() => setLoaded(true)} onError={() => setLoaded(true)} /> : (
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: size * 0.38 }}>{initials(profile.display_name)}</Text>

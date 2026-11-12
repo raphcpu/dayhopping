@@ -27,7 +27,7 @@ export default function Dashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { userId } = useAuth();
-  const { round, members, stations, locations, checkins, expenses, settlements, media, reports, me, isOrganizer, profileOf, reload } = useRound();
+  const { round, members, stations, locations, checkins, expenses, settlements, media, reports, me, isOrganizer, profileOf, reload, isLive } = useRound();
   const [busy, setBusy] = useState<string | null>(null);
   const [trackingOpen, setTrackingOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -281,7 +281,7 @@ export default function Dashboard() {
                 {i > 0 && <Divider />}
                 <ListRow
                   onPress={() => memberMenu(m)}
-                  left={<Avatar profile={m.profile} size={40} ring={st?.currentStationId ? c.teal : undefined} />}
+                  left={<Avatar profile={m.profile} size={40} live={isLive(m.user_id)} />}
                   title={m.user_id === userId ? `${m.profile.display_name} (du)` : m.profile.display_name}
                   subtitle={where}
                   right={

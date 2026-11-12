@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
+import { isLiveAt } from '@/lib/presence';
 import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { requestTrackingPermissions, syncTracking, type TrackingState, watchForeground } from '@/lib/tracking';
@@ -26,6 +27,8 @@ type RoundContext = {
   profileOf: (userId: string | null) => Profile;
   unread: number;
   markRead: () => void;
+  /** sendet die Person gerade Standort (letzte 5 Minuten)? */
+  isLive: (userId: string | null) => boolean;
   tracking: TrackingState;
   askTracking: () => Promise<TrackingState>;
   refreshTracking: () => Promise<void>;
@@ -210,6 +213,15 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
     };
   }, [tracking]);
 
+  // Live-Status regelmäßig neu bewerten, auch ohne neue Standortmeldungen
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const liveSet = useMemo(() => new Set(locations.filter((l) => isLiveAt(l.recorded_at, now)).map((l) => l.user_id)), [locations, now]);
+  const isLive = useCallback((id: string | null) => !!id && liveSet.has(id), [liveSet]);
+
   const profiles = useMemo(() => new Map(members.map((m) => [m.user_id, m.profile])), [members]);
   const profileOf = useCallback((id: string | null) => (id && profiles.get(id)) || UNKNOWN, [profiles]);
 
@@ -231,7 +243,7 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
 
   const value: RoundContext = {
     loading, gone, round, members, stations, locations, checkins, messages, expenses, settlements, media, reports,
-    me, isOrganizer: me?.role === 'organizer', profileOf, unread, markRead, tracking, askTracking, refreshTracking, reload,
+    me, isOrganizer: me?.role === 'organizer', profileOf, unread, markRead, isLive, tracking, askTracking, refreshTracking, reload,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

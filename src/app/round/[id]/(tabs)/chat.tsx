@@ -17,7 +17,7 @@ import { useRound } from '@/providers/RoundProvider';
 export default function ChatTab() {
   const c = useColors();
   const { userId, block } = useAuth();
-  const { round, messages, isOrganizer, profileOf, markRead } = useRound();
+  const { round, messages, isOrganizer, profileOf, markRead, isLive } = useRound();
   const [text, setText] = useState('');
   const [announce, setAnnounce] = useState(false);
   const [sending, setSending] = useState(false);
@@ -99,7 +99,7 @@ export default function ChatTab() {
       <View style={{ flexDirection: 'row', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 8, marginTop: startsGroup ? 10 : 2 }}>
         {!mine && (startsGroup && m.user_id ? (
           <Pressable onPress={() => showProfile(m.user_id!)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`Profil von ${p.display_name}`}>
-            <Avatar profile={p} size={30} />
+            <Avatar profile={p} size={30} live={isLive(m.user_id)} />
           </Pressable>
         ) : <View style={{ width: 30 }} />)}
         <Pressable onLongPress={() => onLongPress(m)} delayLongPress={350}

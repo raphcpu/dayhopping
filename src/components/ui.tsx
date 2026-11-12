@@ -5,6 +5,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, type StyleProp, StyleS
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { initials } from '@/lib/format';
+import { LIVE_GREEN, OFFLINE_GREY } from '@/lib/presence';
 import { avatarUrl } from '@/lib/supabase';
 import { fonts, radius, softShadow, space, useColors } from '@/lib/theme';
 import type { Profile, RoundStatus } from '@/lib/types';
@@ -133,11 +134,18 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
   );
 }
 
-export function Avatar({ profile, size = 40, ring, dimmed }: { profile: Profile; size?: number; ring?: string; dimmed?: boolean }) {
+/**
+ * Profilbild. `live`: true = grüner Rand (sendet gerade Standort), false = ausgegraut,
+ * undefined = neutral.
+ */
+export function Avatar({ profile, size = 40, ring, dimmed, live }: { profile: Profile; size?: number; ring?: string; dimmed?: boolean; live?: boolean }) {
   const url = avatarUrl(profile.avatar_path);
+  const border = live === true ? LIVE_GREEN : live === false ? OFFLINE_GREY : ring;
+  const borderWidth = live !== undefined ? Math.max(2.5, size * 0.07) : ring ? 2.5 : 0;
+  const grey = live === false || dimmed;
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: profile.color, alignItems: 'center', justifyContent: 'center',
-      overflow: 'hidden', borderWidth: ring ? 2.5 : 0, borderColor: ring, opacity: dimmed ? 0.45 : 1 }}>
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: grey ? OFFLINE_GREY : profile.color, alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden', borderWidth, borderColor: border, opacity: grey ? 0.5 : 1 }}>
       {url ? <Image source={{ uri: url }} style={{ width: size, height: size }} contentFit="cover" transition={150} /> : (
         <Text style={{ color: '#fff', fontWeight: '700', fontSize: size * 0.38 }}>{initials(profile.display_name)}</Text>
       )}
