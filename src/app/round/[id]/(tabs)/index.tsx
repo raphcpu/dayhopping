@@ -195,7 +195,9 @@ export default function MapTab() {
         showsMyLocationButton={false}
         showsPointsOfInterests={false}>
         {stations.length > 1 && (
-          <Polyline coordinates={stations.map((s) => ({ latitude: s.lat, longitude: s.lng }))} strokeColor={c.accent} strokeWidth={4} geodesic />
+          // Farbverlauf: jedes Teilstück geht von der Farbe einer Station in die der nächsten über
+          <Polyline coordinates={stations.map((s) => ({ latitude: s.lat, longitude: s.lng }))} strokeColor={stationColor(stations[0], 0)}
+            strokeColors={stations.map((s, i) => stationColor(s, i))} strokeWidth={6} lineCap="round" lineJoin="round" geodesic />
         )}
         {stats.map((st, i) => (
           <StationGlow key={`glow-${st.station.id}`} lat={st.station.lat} lng={st.station.lng} radius={st.station.radius_m}

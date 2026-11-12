@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
-import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { StationMarker } from '@/components/StationMarker';
 import { mapsConfigured } from '@/lib/config';
 
@@ -17,6 +17,8 @@ export default function MapTestScreen() {
           initialRegion={{ latitude: 53.5565, longitude: 9.987, latitudeDelta: 0.02, longitudeDelta: 0.02 }}
           onMapReady={() => setStatus('KARTE BEREIT')} onMapLoaded={() => setStatus('KARTE GELADEN')}>
           <Marker coordinate={{ latitude: 53.553, longitude: 9.9929 }} title="Jungfernstieg" />
+          <Polyline coordinates={[{ latitude: 53.553, longitude: 9.9929 }, { latitude: 53.5565, longitude: 9.987 }, { latitude: 53.5605, longitude: 9.981 }]}
+            strokeColors={['#FF3B30', '#34C759', '#007AFF']} strokeColor="#FF3B30" strokeWidth={6} lineCap="round" />
           {/* Station mit drei Blütenblättern: prüft die versetzten Marker */}
           <StationMarker lat={53.5565} lng={9.987} number={2} color="#34C759" size={55} visited selected={false}
             present={[
