@@ -32,7 +32,7 @@ export function StationMarker({ lat, lng, number, color, size, visited, selected
   const extra = n - shown.length;
   const slots = shown.length + (extra > 0 ? 1 : 0);
   const coordinate = { latitude: lat, longitude: lng };
-  const settling = useMarkerSettle();
+  const settling = useMarkerSettle(`${number}|${color}|${extra}`);
 
   // Anker verschiebt das Bild um (dx, dy) Pixel vom Stationspunkt weg
   const anchorFor = (k: number) => {
@@ -43,11 +43,14 @@ export function StationMarker({ lat, lng, number, color, size, visited, selected
 
   return (
     <>
-      <Marker coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={settling} zIndex={selected ? 32 : 30} onPress={onPress}>
+      {/* Stationskreis immer live zeichnen: Ein eingefrorenes Bild verlor auf manchen Geräten die Nummer */}
+      <Marker coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges zIndex={selected ? 32 : 30} onPress={onPress}>
         <View style={{ width: size + 8, height: size + 8, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color, borderWidth: 3, borderColor: '#fff',
             alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: Math.round(size * 0.42), textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 2 }}>{number}</Text>
+            <Text allowFontScaling={false} numberOfLines={1}
+              style={{ color: '#fff', fontWeight: '800', fontSize: Math.round(size * 0.42), lineHeight: Math.round(size * 0.52), minWidth: size * 0.6, textAlign: 'center',
+                textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 2 }}>{number}</Text>
           </View>
           {visited && (
             // Haken: Hier warst du schon
@@ -84,7 +87,7 @@ function PetalMarker({ coordinate, anchor, profile, size, ringColor, grey, zInde
   const url = avatarUrl(profile.avatar_path);
   // Marker sind auf Android Bilder: neu zeichnen, bis das Profilbild geladen ist
   const [loaded, setLoaded] = useState(!url);
-  const settling = useMarkerSettle();
+  const settling = useMarkerSettle(`${size}|${ringColor}|${grey}`);
   return (
     <Marker coordinate={coordinate} anchor={anchor} tracksViewChanges={settling || !loaded} zIndex={zIndex} onPress={onPress}>
       <View style={{ width: size + 4, height: size + 4, alignItems: 'center', justifyContent: 'center', opacity: grey ? 0.55 : 1 }}>
