@@ -37,7 +37,9 @@ export function TrackingSheet({ visible, onClose }: { visible: boolean; onClose:
   return (
     <Sheet visible={visible} onClose={onClose} title="Standort teilen">
       <Body bold>
-        DayHop erfasst Standortdaten, um deinen Live-Standort mit deiner Gruppe zu teilen und dich automatisch an Stationen einzuchecken – auch wenn die App geschlossen ist oder nicht verwendet wird.
+        {Platform.OS === 'web'
+          ? 'DayHop erfasst Standortdaten, um deinen Live-Standort mit deiner Gruppe zu teilen und dich automatisch an Stationen einzuchecken – solange DayHop geöffnet ist.'
+          : 'DayHop erfasst Standortdaten, um deinen Live-Standort mit deiner Gruppe zu teilen und dich automatisch an Stationen einzuchecken – auch wenn die App geschlossen ist oder nicht verwendet wird.'}
       </Body>
       <View style={{ gap: space.m }}>
         {point('people', 'Alle in diesem Hop sehen live auf der Karte, wo du bist – sonst niemand.')}
@@ -57,7 +59,18 @@ export function TrackingSheet({ visible, onClose }: { visible: boolean; onClose:
       {round.status === 'aktiv' && me.sharing && tracking === 'keine-berechtigung' && (
         <Button title="Standortzugriff erlauben" icon="navigate" onPress={allow} loading={busy} />
       )}
-      {round.status === 'aktiv' && me.sharing && tracking === 'vordergrund' && (
+      {Platform.OS === 'web' && round.status === 'aktiv' && me.sharing && tracking === 'vordergrund' && (
+        <View style={{ gap: space.m }}>
+          <View style={{ flexDirection: 'row', gap: space.s, alignItems: 'center' }}>
+            <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c.teal }} />
+            <Body small style={{ color: c.teal }}>Dein Standort wird geteilt, solange DayHop offen ist.</Body>
+          </View>
+          <View style={{ backgroundColor: c.sunSoft, borderRadius: 16, padding: space.l }}>
+            <Body small>Im Browser kann DayHop nicht im Hintergrund orten. Lass DayHop während des Hops geöffnet – das Display bleibt dabei an. Wechselst du in eine andere App oder sperrst das Handy, pausiert das Teilen, bis du zurückkommst.</Body>
+          </View>
+        </View>
+      )}
+      {Platform.OS !== 'web' && round.status === 'aktiv' && me.sharing && tracking === 'vordergrund' && (
         <View style={{ gap: space.m }}>
           <View style={{ backgroundColor: c.sunSoft, borderRadius: 16, padding: space.l }}>
             <Body small>Im Moment wird dein Standort nur geteilt, solange DayHop geöffnet ist. Wähle in den Einstellungen beim Standort „Immer“, damit es auch bei gesperrtem Handy klappt.</Body>

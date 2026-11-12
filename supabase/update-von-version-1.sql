@@ -287,3 +287,110 @@ create index if not exists messages_user_idx on public.messages (user_id);
 create index if not exists settlements_from_idx on public.settlements (from_user);
 create index if not exists settlements_to_idx on public.settlements (to_user);
 create index if not exists blocks_blocked_idx on public.blocks (blocked_id);
+-- ----------------------------------------------------------------------------
+-- Web-Push für die Browser-Version (iPhone-PWA)
+-- Browser-Abos liegen als JSON in push_tokens (platform = 'web'). send_push legt
+-- Web-Mitteilungen in eine Warteschlange und stößt die Edge Function "web-push" an,
+-- die sie mit dem VAPID-Schlüssel verschickt.
+-- ----------------------------------------------------------------------------
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+
+-- Eine Zeile: VAPID-Schlüssel und Adresse der Edge Function (wird einmalig eingetragen)
+create table if not exists private.web_push_config (
+  id           integer primary key default 1 check (id = 1),
+  public_key   text not null,
+  private_key  text not null,
+  subject      text not null default 'mailto:info@dayhop.app',
+  function_url text
+);
+
+create table if not exists public.web_push_outbox (
+  id         bigserial primary key,
+  token      text not null,
+  payload    jsonb not null,
+  created_at timestamptz not null default now()
+);
+alter table public.web_push_outbox enable row level security; -- keine Policies: nur der Server
+
+create or replace function public.web_push_config()
+returns table (public_key text, private_key text, subject text)
+language sql security definer set search_path = public, private as $$
+  select public_key, private_key, subject from private.web_push_config where id = 1;
+$$;
+
+-- Holt bis zu p_limit Mitteilungen aus der Warteschlange (und entfernt sie dabei)
+create or replace function public.web_push_take(p_limit integer default 200)
+returns setof public.web_push_outbox
+language sql security definer set search_path = public as $$
+  delete from web_push_outbox
+   where id in (select id from web_push_outbox order by id limit p_limit for update skip locked)
+  returning *;
+$$;
+
+revoke all on function public.web_push_config() from public, anon, authenticated;
+revoke all on function public.web_push_take(integer) from public, anon, authenticated;
+grant execute on function public.web_push_config() to service_role;
+grant execute on function public.web_push_take(integer) to service_role;
+
+-- Wer bekommt eine Mitteilung? (App-Geräte und Browser-Abos)
+create or replace function public.push_targets(p_round uuid, p_exclude uuid, p_respect_mute boolean, p_only_organizers boolean)
+returns table (token text, platform text)
+language sql stable security definer set search_path = public as $$
+  select t.token, t.platform
+    from round_members m join push_tokens t on t.user_id = m.user_id
+   where m.round_id = p_round
+     and m.user_id is distinct from p_exclude
+     and (not p_respect_mute or not m.muted)
+     and (not p_only_organizers or m.role = 'organizer')
+     -- Durchsagen und Systemmeldungen (ohne Stumm-Regel) kommen trotz Blockierung an
+     and (not p_respect_mute
+          or not exists (select 1 from blocks b where b.blocker_id = m.user_id and b.blocked_id = p_exclude));
+$$;
+revoke all on function public.push_targets(uuid, uuid, boolean, boolean) from public, anon, authenticated;
+
+create or replace function public.send_push(p_round uuid, p_exclude uuid, p_title text, p_body text,
+                                            p_respect_mute boolean, p_data jsonb default '{}',
+                                            p_only_organizers boolean default false)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_batch jsonb;
+  v_web   integer;
+  v_url   text;
+begin
+  -- App: über den Expo-Push-Dienst, in Paketen zu 100
+  for v_batch in
+    select jsonb_agg(jsonb_build_object(
+             'to', q.token, 'title', p_title, 'body', p_body,
+             'sound', 'default', 'channelId', 'default', 'priority', 'high',
+             'data', p_data || jsonb_build_object('roundId', p_round)))
+    from (select x.token, (row_number() over () - 1) / 100 as grp
+            from push_targets(p_round, p_exclude, p_respect_mute, p_only_organizers) x
+           where x.platform is distinct from 'web') q
+    group by q.grp
+  loop
+    perform net.http_post(
+      url     := 'https://exp.host/--/api/v2/push/send',
+      body    := v_batch,
+      headers := '{"Content-Type": "application/json", "Accept": "application/json"}'::jsonb);
+  end loop;
+
+  -- Browser: in die Warteschlange, dann die Edge Function "web-push" anstoßen
+  insert into web_push_outbox (token, payload)
+  select x.token, jsonb_build_object('title', p_title, 'body', p_body,
+                                     'data', p_data || jsonb_build_object('roundId', p_round))
+    from push_targets(p_round, p_exclude, p_respect_mute, p_only_organizers) x
+   where x.platform = 'web';
+  get diagnostics v_web = row_count;
+  if v_web > 0 then
+    select function_url into v_url from private.web_push_config where id = 1;
+    if v_url is not null then
+      perform net.http_post(url := v_url, body := '{}'::jsonb,
+                            headers := '{"Content-Type": "application/json"}'::jsonb);
+    end if;
+  end if;
+exception when others then
+  raise warning 'send_push fehlgeschlagen: %', sqlerrm;
+end;
+$$;
+revoke all on function public.send_push(uuid, uuid, text, text, boolean, jsonb, boolean) from public, anon, authenticated;

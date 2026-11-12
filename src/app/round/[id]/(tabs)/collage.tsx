@@ -1,15 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { File, Paths } from 'expo-file-system';
 import { Image } from 'expo-image';
-import * as Sharing from 'expo-sharing';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Pressable, StatusBar, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, StatusBar, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MenuHost, showMenu } from '@/components/Menu';
 import { Body, Button, EmptyState, IconButton, Sheet } from '@/components/ui';
+import { showAlert } from '@/lib/alert';
 import { errorText, formatTime } from '@/lib/format';
 import { confirmBlock, reportContent } from '@/lib/moderation';
+import { shareRemoteFile } from '@/lib/exportShare';
 import { deleteMedia, pickFromLibrary, signedUrls, takeWithCamera, uploadToCollage } from '@/lib/media';
 import { radius, softShadow, space, useColors } from '@/lib/theme';
 import type { Media } from '@/lib/types';
@@ -100,9 +100,9 @@ export default function CollageTab() {
           failed.push(errorText(e));
         }
       }
-      if (failed.length) Alert.alert(`${failed.length} von ${assets.length} nicht hochgeladen`, failed[0]);
+      if (failed.length) showAlert(`${failed.length} von ${assets.length} nicht hochgeladen`, failed[0]);
     } catch (e) {
-      Alert.alert('Das hat nicht geklappt', errorText(e));
+      showAlert('Das hat nicht geklappt', errorText(e));
     } finally {
       setProgress(null);
     }
@@ -119,12 +119,9 @@ export default function CollageTab() {
     if (!item || !full[item.storage_path]) return;
     setSharing(true);
     try {
-      const target = new File(Paths.cache, item.storage_path.split('/').pop()!);
-      if (target.exists) target.delete();
-      const file = await File.downloadFileAsync(full[item.storage_path], target);
-      await Sharing.shareAsync(file.uri);
+      await shareRemoteFile(full[item.storage_path], item.storage_path.split('/').pop()!);
     } catch (e) {
-      Alert.alert('Das hat nicht geklappt', errorText(e));
+      showAlert('Das hat nicht geklappt', errorText(e));
     } finally {
       setSharing(false);
     }
@@ -132,14 +129,14 @@ export default function CollageTab() {
 
   const remove = () => {
     if (!item) return;
-    Alert.alert(item.kind === 'video' ? 'Video löschen?' : 'Foto löschen?', 'Es verschwindet für alle aus der Collage.', [
+    showAlert(item.kind === 'video' ? 'Video löschen?' : 'Foto löschen?', 'Es verschwindet für alle aus der Collage.', [
       { text: 'Abbrechen', style: 'cancel' },
       { text: 'Löschen', style: 'destructive', onPress: async () => {
         try {
           await deleteMedia(item);
           setViewer(null);
         } catch (e) {
-          Alert.alert('Das hat nicht geklappt', errorText(e));
+          showAlert('Das hat nicht geklappt', errorText(e));
         }
       } },
     ]);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Circle } from 'react-native-maps';
+import { Circle } from '@/lib/maps';
 import { glowLevel, RAINBOW, withAlpha } from '@/lib/stationColors';
 
 type Props = { lat: number; lng: number; radius: number; color: string; present: number; animate: boolean };

@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
-import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import { MapView, Circle, Marker, Polyline, PROVIDER_GOOGLE } from '@/lib/maps';
 import { StationMarker } from '@/components/StationMarker';
 import { mapsConfigured } from '@/lib/config';
 import { gradientRoute } from '@/lib/stationColors';

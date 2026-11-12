@@ -5,7 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { KeyboardProvider } from '@/lib/keyboard';
 import { CrashScreen } from '@/components/CrashScreen';
 import { MenuHost } from '@/components/Menu';
 import { type CrashInfo, onFatal, reportError } from '@/lib/crash';

@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Dimensions, FlatList, Image, Linking, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, Text, View } from 'react-native';
-import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import { Dimensions, FlatList, Image, Linking, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, Text, View } from 'react-native';
+import { MapView, Circle, Marker, Polyline, PROVIDER_GOOGLE } from '@/lib/maps';
 import { MapMissing } from '@/components/MapMissing';
 import { showProfile } from '@/components/ProfileSheet';
 import { StationGlow } from '@/components/StationGlow';
 import { StationMarker } from '@/components/StationMarker';
 import { TrackingSheet } from '@/components/TrackingSheet';
 import { AvatarStack, Body, Button, Card, Heading, IconButton } from '@/components/ui';
+import { showAlert } from '@/lib/alert';
 import { useBatteryOptimized } from '@/lib/battery';
 import { mapsConfigured } from '@/lib/config';
 import { LIVE_GREEN, OFFLINE_GREY } from '@/lib/presence';
@@ -124,7 +125,7 @@ export default function MapTab() {
     const l = locations.find((x) => x.user_id === uid);
     if (!l) {
       const p = profileOf(uid);
-      return Alert.alert(uid === userId ? 'Kein Standort' : p.display_name, uid === userId
+      return showAlert(uid === userId ? 'Kein Standort' : p.display_name, uid === userId
         ? 'Dein Standort wird gerade nicht geteilt.'
         : 'Teilt gerade keinen Standort oder hat das Teilen pausiert.');
     }
@@ -171,6 +172,8 @@ export default function MapTab() {
         ? { icon: 'battery-dead' as const, text: 'Akku-Sparen bremst Ortung', bg: c.card, fg: c.danger }
       : tracking === 'hintergrund'
         ? { icon: 'navigate' as const, text: 'Standort wird geteilt', bg: c.card, fg: c.teal }
+        : tracking === 'vordergrund' && Platform.OS === 'web'
+          ? { icon: 'navigate' as const, text: 'Standort wird geteilt', bg: c.card, fg: c.teal }
         : tracking === 'vordergrund'
           ? { icon: 'warning' as const, text: 'Nur bei geöffneter App', bg: c.card, fg: c.danger }
           : { icon: 'navigate-outline' as const, text: 'Standort freigeben', bg: c.accent, fg: c.onAccent };

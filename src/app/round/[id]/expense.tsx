@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, usePreventRemove, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView } from '@/lib/keyboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, Body, Button, Card, Chip, Divider, Field, SectionLabel, Segmented } from '@/components/ui';
+import { showAlert } from '@/lib/alert';
 import { errorText } from '@/lib/format';
 import { centsToInput, formatEuro, parseEuro, splitByWeights, splitEqually } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
@@ -54,7 +55,7 @@ export default function ExpenseScreen() {
   // Ungespeicherte Eingaben nicht stillschweigend verwerfen (Zurück, Wischgeste)
   const dirty = !saved && canEdit && (title !== (existing?.title ?? '') || amountText !== (existing ? centsToInput(existing.amount_cents) : ''));
   usePreventRemove(dirty, ({ data }) => {
-    Alert.alert('Änderungen verwerfen?', 'Die Ausgabe ist noch nicht gespeichert.', [
+    showAlert('Änderungen verwerfen?', 'Die Ausgabe ist noch nicht gespeichert.', [
       { text: 'Weiter bearbeiten', style: 'cancel' },
       { text: 'Verwerfen', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
     ]);
@@ -122,11 +123,11 @@ export default function ExpenseScreen() {
   };
 
   const remove = () => {
-    Alert.alert('Ausgabe löschen?', existing!.title, [
+    showAlert('Ausgabe löschen?', existing!.title, [
       { text: 'Abbrechen', style: 'cancel' },
       { text: 'Löschen', style: 'destructive', onPress: async () => {
         const { error } = await supabase.rpc('delete_expense', { p_id: existing!.id });
-        if (error) return Alert.alert('Das hat nicht geklappt', errorText(error));
+        if (error) return showAlert('Das hat nicht geklappt', errorText(error));
         setSaved(true);
         setTimeout(() => router.back(), 0);
       } },

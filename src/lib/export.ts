@@ -1,6 +1,4 @@
-import { File, Paths } from 'expo-file-system';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
+import { shareHtmlAsPdf, shareTextFile } from './exportShare';
 import { formatDateTime, formatDay, formatDuration, formatTime } from './format';
 import { computeBalances, formatEuro, settleUp } from './money';
 import { memberStats, stationStats } from './stats';
@@ -30,13 +28,6 @@ function toCsv(rows: (string | number)[][]): string {
 
 const euroCsv = (cents: number) => `${cents < 0 ? '-' : ''}${Math.floor(Math.abs(cents) / 100)},${(Math.abs(cents) % 100).toString().padStart(2, '0')}`;
 
-async function shareText(name: string, content: string, mimeType: string) {
-  const file = new File(Paths.cache, name);
-  if (file.exists) file.delete();
-  file.create();
-  file.write(content);
-  await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: name });
-}
 
 export function costsCsv(d: ExportData): string {
   const name = nameOf(d);
@@ -162,13 +153,7 @@ export function reportHtml(d: ExportData): string {
   </body></html>`;
 }
 
-export async function sharePdf(d: ExportData) {
-  const { uri } = await Print.printToFileAsync({ html: reportHtml(d) });
-  const target = new File(Paths.cache, `${fileName(d.round, 'Bericht')}.pdf`);
-  if (target.exists) target.delete();
-  new File(uri).move(target);
-  await Sharing.shareAsync(target.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
-}
+export const sharePdf = (d: ExportData) => shareHtmlAsPdf(`${fileName(d.round, 'Bericht')}.pdf`, reportHtml(d));
 
-export const shareCostsCsv = (d: ExportData) => shareText(`${fileName(d.round, 'Kosten')}.csv`, costsCsv(d), 'text/csv');
-export const shareVisitsCsv = (d: ExportData) => shareText(`${fileName(d.round, 'Besuche')}.csv`, visitsCsv(d), 'text/csv');
+export const shareCostsCsv = (d: ExportData) => shareTextFile(`${fileName(d.round, 'Kosten')}.csv`, costsCsv(d), 'text/csv');
+export const shareVisitsCsv = (d: ExportData) => shareTextFile(`${fileName(d.round, 'Besuche')}.csv`, visitsCsv(d), 'text/csv');

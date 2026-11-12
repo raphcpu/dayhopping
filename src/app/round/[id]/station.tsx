@@ -2,13 +2,15 @@ import * as Location from 'expo-location';
 import { useLocalSearchParams, useNavigation, usePreventRemove, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, Keyboard, Pressable, ScrollView, Text, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { Keyboard, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView } from '@/lib/keyboard';
+import { geocode, reverseGeocode } from '@/lib/geocode';
+import { MapView, Circle, Marker, PROVIDER_GOOGLE } from '@/lib/maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateField } from '@/components/DateField';
 import { MapMissing } from '@/components/MapMissing';
 import { Body, Button, Field, SectionLabel } from '@/components/ui';
+import { showAlert } from '@/lib/alert';
 import { mapsConfigured } from '@/lib/config';
 import { errorText, parseDay } from '@/lib/format';
 import { STATION_COLORS, STATION_RADIUS_M } from '@/lib/stationColors';
@@ -54,7 +56,7 @@ export default function StationScreen() {
   const dirty = !saved && isOrganizer && (name !== (existing?.name ?? '') || address !== (existing?.address ?? '') || note !== (existing?.note ?? '')
     || (!!pin && (!existing || pin.latitude !== existing.lat || pin.longitude !== existing.lng)));
   usePreventRemove(dirty, ({ data }) => {
-    Alert.alert('Änderungen verwerfen?', 'Die Station ist noch nicht gespeichert.', [
+    showAlert('Änderungen verwerfen?', 'Die Station ist noch nicht gespeichert.', [
       { text: 'Weiter bearbeiten', style: 'cancel' },
       { text: 'Verwerfen', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
     ]);
@@ -78,8 +80,8 @@ export default function StationScreen() {
     map.current?.animateToRegion({ ...p, latitudeDelta: 0.004, longitudeDelta: 0.004 }, 350);
     if (!fillAddress) return;
     try {
-      const [a] = await Location.reverseGeocodeAsync(p);
-      if (a) setAddress([[a.street, a.streetNumber].filter(Boolean).join(' '), [a.postalCode, a.city].filter(Boolean).join(' ')].filter(Boolean).join(', '));
+      const a = await reverseGeocode(p);
+      if (a) setAddress(a);
     } catch {
       // Adresse ist nur Zusatzinfo
     }
@@ -91,7 +93,7 @@ export default function StationScreen() {
     setBusy('suche');
     setError(null);
     try {
-      const [hit] = await Location.geocodeAsync(query.trim());
+      const hit = await geocode(query.trim());
       if (!hit) setError('Dazu habe ich keinen Ort gefunden. Versuch es mit Straße und Stadt oder setz den Punkt direkt auf der Karte.');
       else await place({ latitude: hit.latitude, longitude: hit.longitude });
     } catch {
@@ -109,7 +111,7 @@ export default function StationScreen() {
       const l = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       await place({ latitude: l.coords.latitude, longitude: l.coords.longitude });
     } catch (e) {
-      Alert.alert('Standort nicht verfügbar', errorText(e));
+      showAlert('Standort nicht verfügbar', errorText(e));
     } finally {
       setBusy(null);
     }
@@ -151,11 +153,11 @@ export default function StationScreen() {
   };
 
   const remove = () => {
-    Alert.alert('Station löschen?', 'Check-ins an dieser Station gehen dabei verloren.', [
+    showAlert('Station löschen?', 'Check-ins an dieser Station gehen dabei verloren.', [
       { text: 'Abbrechen', style: 'cancel' },
       { text: 'Löschen', style: 'destructive', onPress: async () => {
         const { error } = await supabase.from('stations').delete().eq('id', existing!.id);
-        if (error) return Alert.alert('Das hat nicht geklappt', errorText(error));
+        if (error) return showAlert('Das hat nicht geklappt', errorText(error));
         setSaved(true);
         setTimeout(() => router.back(), 0);
       } },

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { type ReactNode, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, type StyleProp, StyleSheet, Text, TextInput, type TextInputProps, type TextStyle, View, type ViewStyle } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView } from '@/lib/keyboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { initials } from '@/lib/format';
 import { LIVE_GREEN, OFFLINE_GREY } from '@/lib/presence';

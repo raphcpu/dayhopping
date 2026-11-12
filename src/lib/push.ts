@@ -59,3 +59,8 @@ export function onPushTap(handler: (data: PushData) => void): () => void {
   const sub = Notifications.addNotificationResponseReceivedListener(handle);
   return () => sub.remove();
 }
+
+// Nur im Browser relevant (siehe push.web.ts); in der App kümmert sich das System darum.
+export type WebPushState = 'aktiv' | 'moeglich' | 'abgelehnt' | 'installieren' | 'nicht-unterstuetzt';
+export const webPushState = (): WebPushState | null => null;
+export const enableWebPush = async (): Promise<WebPushState | null> => null;

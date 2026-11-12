@@ -1,7 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView } from '@/lib/keyboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Body, Button, Field, Segmented } from '@/components/ui';
 import { WaveText } from '@/components/WaveText';

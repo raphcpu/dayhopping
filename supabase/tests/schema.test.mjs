@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const db = new PGlite();
 const q = async (s, p) => (await db.query(s, p)).rows;
 await db.exec(`
-create role anon; create role authenticated;
+create role anon; create role authenticated; create role service_role;
 create schema auth; create schema storage; create schema net;
 create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;

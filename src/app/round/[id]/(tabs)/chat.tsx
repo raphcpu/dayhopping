@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Pressable, Text, TextInput, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView } from '@/lib/keyboard';
 import { showMenu } from '@/components/Menu';
 import { showProfile } from '@/components/ProfileSheet';
 import { Avatar, Body, EmptyState } from '@/components/ui';
+import { showAlert } from '@/lib/alert';
 import { errorText, formatTime } from '@/lib/format';
 import { confirmBlock, reportContent } from '@/lib/moderation';
 import { supabase } from '@/lib/supabase';
@@ -44,7 +45,7 @@ export default function ChatTab() {
     setSending(true);
     const { data, error } = await supabase.from('messages').insert({ round_id: round.id, user_id: userId, body, kind: announce ? 'announcement' : 'chat' }).select().single();
     setSending(false);
-    if (error) return Alert.alert('Nicht gesendet', `${errorText(error)}\n\nDein Text bleibt im Eingabefeld.`);
+    if (error) return showAlert('Nicht gesendet', `${errorText(error)}\n\nDein Text bleibt im Eingabefeld.`);
     if (data) addMessage(data as Message);
     setText('');
     setAnnounce(false);
@@ -57,9 +58,9 @@ export default function ChatTab() {
     const excerpt = m.body.length > 80 ? `${m.body.slice(0, 80)}…` : m.body;
     const remove = async () => {
       const { error } = await supabase.from('messages').delete().eq('id', m.id);
-      if (error) Alert.alert('Das hat nicht geklappt', errorText(error));
+      if (error) showAlert('Das hat nicht geklappt', errorText(error));
     };
-    if (mine) return Alert.alert('Nachricht löschen?', excerpt, [{ text: 'Abbrechen', style: 'cancel' }, { text: 'Löschen', style: 'destructive', onPress: remove }]);
+    if (mine) return showAlert('Nachricht löschen?', excerpt, [{ text: 'Abbrechen', style: 'cancel' }, { text: 'Löschen', style: 'destructive', onPress: remove }]);
     const author = m.user_id;
     showMenu({
       title: profileOf(author).display_name,

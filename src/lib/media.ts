@@ -1,30 +1,10 @@
-import { File, UploadType } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
-import * as VideoThumbnails from 'expo-video-thumbnails';
-import { SUPABASE_ANON_KEY, SUPABASE_URL, supabase } from './supabase';
+import { makeVideoThumb, uploadFile } from './mediaUpload';
+import { supabase } from './supabase';
 
 const MAX_BYTES = 50 * 1024 * 1024; // Grenze im kostenlosen Supabase-Tarif
 
 const randomName = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-
-/** Lädt eine lokale Datei direkt vom Gerätespeicher hoch, ohne sie komplett in den Arbeitsspeicher zu holen. */
-async function uploadFile(bucket: string, path: string, uri: string, contentType: string, upsert = false) {
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) throw new Error('Nicht angemeldet');
-  const res = await new File(uri).upload(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`, {
-    httpMethod: 'POST',
-    uploadType: UploadType.BINARY_CONTENT,
-    headers: {
-      Authorization: `Bearer ${data.session.access_token}`,
-      apikey: SUPABASE_ANON_KEY,
-      'Content-Type': contentType,
-      'x-upsert': upsert ? 'true' : 'false',
-    },
-  });
-  if (res.status === 413) throw new Error('Die Datei ist zu groß (höchstens 50 MB).');
-  if (res.status === 401 || res.status === 403) throw new Error('Keine Berechtigung zum Hochladen. Melde dich ab und wieder an.');
-  if (res.status < 200 || res.status >= 300) throw new Error(`Hochladen fehlgeschlagen (Fehler ${res.status}). Prüf deine Verbindung.`);
-}
 
 export async function pickFromLibrary(): Promise<ImagePicker.ImagePickerAsset[]> {
   const r = await ImagePicker.launchImageLibraryAsync({
@@ -52,7 +32,7 @@ export async function takeWithCamera(video: boolean): Promise<ImagePicker.ImageP
 export async function uploadToCollage(roundId: string, userId: string, stationId: string | null, asset: ImagePicker.ImagePickerAsset) {
   const isVideo = asset.type === 'video';
   if (asset.fileSize && asset.fileSize > MAX_BYTES) throw new Error('Die Datei ist größer als 50 MB.');
-  const ext = isVideo ? (asset.uri.toLowerCase().endsWith('.mov') ? 'mov' : 'mp4') : 'jpg';
+  const ext = isVideo ? (asset.uri.toLowerCase().endsWith('.mov') || asset.mimeType === 'video/quicktime' ? 'mov' : 'mp4') : asset.mimeType === 'image/png' ? 'png' : 'jpg';
   const base = `${roundId}/${userId}/${randomName()}`;
   const path = `${base}.${ext}`;
   await uploadFile('media', path, asset.uri, asset.mimeType ?? (isVideo ? 'video/mp4' : 'image/jpeg'));
@@ -60,9 +40,11 @@ export async function uploadToCollage(roundId: string, userId: string, stationId
   let thumbPath: string | null = null;
   if (isVideo) {
     try {
-      const thumb = await VideoThumbnails.getThumbnailAsync(asset.uri, { time: 500, quality: 0.6 });
-      thumbPath = `${base}-vorschau.jpg`;
-      await uploadFile('media', thumbPath, thumb.uri, 'image/jpeg');
+      const thumbUri = await makeVideoThumb(asset.uri);
+      if (thumbUri) {
+        thumbPath = `${base}-vorschau.jpg`;
+        await uploadFile('media', thumbPath, thumbUri, 'image/jpeg');
+      }
     } catch {
       thumbPath = null; // Vorschau ist nur Kür
     }

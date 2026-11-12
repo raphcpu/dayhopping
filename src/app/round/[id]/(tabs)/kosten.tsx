@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { Avatar, Body, Button, Card, Chip, Divider, EmptyState, ListRow, SectionLabel, Sheet } from '@/components/ui';
+import { showAlert } from '@/lib/alert';
 import { shareCostsCsv, sharePdf } from '@/lib/export';
 import { errorText, formatTime } from '@/lib/format';
 import { computeBalances, formatEuro, settleUp, type Transfer } from '@/lib/money';
@@ -43,21 +44,21 @@ export default function CostsTab() {
   const settle = (t: Transfer) => {
     const from = profileOf(t.from).display_name;
     const to = profileOf(t.to).display_name;
-    Alert.alert('Zahlung erledigt?', `${from} hat ${to} ${formatEuro(t.cents)} gegeben.`, [
+    showAlert('Zahlung erledigt?', `${from} hat ${to} ${formatEuro(t.cents)} gegeben.`, [
       { text: 'Abbrechen', style: 'cancel' },
       { text: 'Ja, erledigt', onPress: async () => {
         const { error } = await supabase.from('settlements').insert({ round_id: round.id, from_user: t.from, to_user: t.to, amount_cents: t.cents });
-        if (error) Alert.alert('Das hat nicht geklappt', errorText(error));
+        if (error) showAlert('Das hat nicht geklappt', errorText(error));
       } },
     ]);
   };
 
   const undo = (id: string) => {
-    Alert.alert('Zahlung zurücknehmen?', 'Der Betrag gilt dann wieder als offen.', [
+    showAlert('Zahlung zurücknehmen?', 'Der Betrag gilt dann wieder als offen.', [
       { text: 'Abbrechen', style: 'cancel' },
       { text: 'Zurücknehmen', style: 'destructive', onPress: async () => {
         const { error } = await supabase.from('settlements').delete().eq('id', id);
-        if (error) Alert.alert('Das hat nicht geklappt', errorText(error));
+        if (error) showAlert('Das hat nicht geklappt', errorText(error));
       } },
     ]);
   };
@@ -70,7 +71,7 @@ export default function CostsTab() {
       else await shareCostsCsv(data);
       setExportOpen(false);
     } catch (e) {
-      Alert.alert('Export fehlgeschlagen', errorText(e));
+      showAlert('Export fehlgeschlagen', errorText(e));
     } finally {
       setBusy(null);
     }

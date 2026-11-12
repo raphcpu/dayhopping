@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Image, Text, View } from 'react-native';
-import { Marker } from 'react-native-maps';
+import { Marker } from '@/lib/maps';
 import { initials } from '@/lib/format';
 import { LIVE_GREEN, OFFLINE_GREY } from '@/lib/presence';
 import { avatarUrl } from '@/lib/supabase';

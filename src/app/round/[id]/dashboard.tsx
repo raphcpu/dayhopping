@@ -2,13 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, ScrollView, Share, Switch, Text, View } from 'react-native';
+import { Platform, ScrollView, Share, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateField } from '@/components/DateField';
 import { showMenu } from '@/components/Menu';
 import { showProfile } from '@/components/ProfileSheet';
 import { TrackingSheet } from '@/components/TrackingSheet';
 import { Avatar, Body, Button, Card, Divider, Field, Heading, IconButton, ListRow, SectionLabel, Sheet } from '@/components/ui';
+import { showAlert } from '@/lib/alert';
 import { shareCostsCsv, sharePdf, shareVisitsCsv } from '@/lib/export';
 import { errorText, formatAgo, formatDay, formatDuration, formatTime, parseDay, toDay } from '@/lib/format';
 import { deleteMedia } from '@/lib/media';
@@ -50,7 +51,7 @@ export default function Dashboard() {
 
   if (!round || !me || !userId) return null;
 
-  const fail = (e: unknown) => Alert.alert('Das hat nicht geklappt', errorText(e));
+  const fail = (e: unknown) => showAlert('Das hat nicht geklappt', errorText(e));
   const run = async (key: string, fn: () => PromiseLike<{ error: unknown } | void>) => {
     setBusy(key);
     try {
@@ -138,7 +139,7 @@ export default function Dashboard() {
   };
 
   const leave = () =>
-    Alert.alert('Hop verlassen?', 'Du siehst dann Karte, Chat, Kosten und Collage nicht mehr.', [
+    showAlert('Hop verlassen?', 'Du siehst dann Karte, Chat, Kosten und Collage nicht mehr.', [
       { text: 'Abbrechen', style: 'cancel' },
       { text: 'Verlassen', style: 'destructive', onPress: async () => {
         const { error } = await supabase.rpc('remove_member', { p_round: round.id, p_user: userId });
@@ -148,7 +149,7 @@ export default function Dashboard() {
     ]);
 
   const destroy = () =>
-    Alert.alert('Hop endgültig löschen?', 'Alle Stationen, Nachrichten, Ausgaben, Fotos und Videos werden für alle gelöscht. Das lässt sich nicht rückgängig machen.', [
+    showAlert('Hop endgültig löschen?', 'Alle Stationen, Nachrichten, Ausgaben, Fotos und Videos werden für alle gelöscht. Das lässt sich nicht rückgängig machen.', [
       { text: 'Abbrechen', style: 'cancel' },
       { text: 'Endgültig löschen', style: 'destructive', onPress: async () => {
         const paths = media.flatMap((m) => [m.storage_path, ...(m.thumb_path ? [m.thumb_path] : [])]);

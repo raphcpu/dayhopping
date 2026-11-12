@@ -1,4 +1,5 @@
-import { Alert } from 'react-native';
+import { showAlert } from '@/lib/alert';
+
 import { showMenu } from '@/components/Menu';
 import { errorText } from './format';
 import { supabase } from './supabase';
@@ -19,8 +20,8 @@ export function reportContent(target: Target) {
           round_id: target.roundId, target_kind: target.kind, target_id: target.id, target_user: target.userId,
           excerpt: target.excerpt.slice(0, 300), reason,
         });
-        if (error && error.code !== '23505') return Alert.alert('Das hat nicht geklappt', errorText(error));
-        Alert.alert(error ? 'Schon gemeldet' : 'Danke, gemeldet', error ? 'Das hast du bereits gemeldet.' : 'Die Organisation sieht sich das an.');
+        if (error && error.code !== '23505') return showAlert('Das hat nicht geklappt', errorText(error));
+        showAlert(error ? 'Schon gemeldet' : 'Danke, gemeldet', error ? 'Das hast du bereits gemeldet.' : 'Die Organisation sieht sich das an.');
       },
     })),
   });
@@ -28,8 +29,8 @@ export function reportContent(target: Target) {
 
 /** Bestätigung vor dem Blockieren. */
 export function confirmBlock(name: string, block: () => Promise<void>) {
-  Alert.alert(`${name} blockieren?`, 'Du siehst dann keine Chat-Nachrichten, Fotos und Videos dieser Person mehr und bekommst keine Benachrichtigungen von ihr. Durchsagen der Organisation siehst du weiterhin. Aufheben kannst du das im Profil.', [
+  showAlert(`${name} blockieren?`, 'Du siehst dann keine Chat-Nachrichten, Fotos und Videos dieser Person mehr und bekommst keine Benachrichtigungen von ihr. Durchsagen der Organisation siehst du weiterhin. Aufheben kannst du das im Profil.', [
     { text: 'Abbrechen', style: 'cancel' },
-    { text: 'Blockieren', style: 'destructive', onPress: () => block().catch((e) => Alert.alert('Das hat nicht geklappt', errorText(e))) },
+    { text: 'Blockieren', style: 'destructive', onPress: () => block().catch((e) => showAlert('Das hat nicht geklappt', errorText(e))) },
   ]);
 }

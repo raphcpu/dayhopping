@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, Body, Button, Card, Divider, Field, ListRow, SectionLabel } from '@/components/ui';
+import { WebPushCard } from '@/components/WebPushCard';
+import { showAlert } from '@/lib/alert';
 import { errorText } from '@/lib/format';
 import { uploadAvatar } from '@/lib/media';
 import { supabase } from '@/lib/supabase';
@@ -35,17 +37,17 @@ export default function ProfileScreen() {
     try {
       await fn();
     } catch (e) {
-      Alert.alert('Das hat nicht geklappt', errorText(e));
+      showAlert('Das hat nicht geklappt', errorText(e));
     } finally {
       setBusy(false);
     }
   };
 
   const confirmDelete = () =>
-    Alert.alert('Konto endgültig löschen?', 'Dein Konto, dein Profil, deine Nachrichten, Fotos, Videos, Check-ins und dein Standort werden gelöscht. Hops, in denen nur du bist, verschwinden ganz. Ausgaben, an denen andere beteiligt sind, bleiben für deren Abrechnung ohne deinen Namen bestehen. Das lässt sich nicht rückgängig machen.', [
+    showAlert('Konto endgültig löschen?', 'Dein Konto, dein Profil, deine Nachrichten, Fotos, Videos, Check-ins und dein Standort werden gelöscht. Hops, in denen nur du bist, verschwinden ganz. Ausgaben, an denen andere beteiligt sind, bleiben für deren Abrechnung ohne deinen Namen bestehen. Das lässt sich nicht rückgängig machen.', [
       { text: 'Abbrechen', style: 'cancel' },
       { text: 'Weiter', style: 'destructive', onPress: () =>
-        Alert.alert('Wirklich löschen?', `Das Konto ${session?.user.email ?? ''} wird jetzt gelöscht.`, [
+        showAlert('Wirklich löschen?', `Das Konto ${session?.user.email ?? ''} wird jetzt gelöscht.`, [
           { text: 'Abbrechen', style: 'cancel' },
           { text: 'Konto löschen', style: 'destructive', onPress: () => run(deleteAccount) },
         ]) },
@@ -84,6 +86,8 @@ export default function ProfileScreen() {
           ))}
         </View>
       </View>
+
+      <WebPushCard />
 
       {blocked.size > 0 && (
         <View>

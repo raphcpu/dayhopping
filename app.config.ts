@@ -31,8 +31,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // erlaubt den direkten Dialog „Akku-Optimierung ausschalten“ (für zuverlässige Hintergrund-Ortung)
     permissions: ['android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS'],
   },
+  web: {
+    // Browser-Version (iPhone-PWA): eine Seite, die Expo Router im Browser steuert
+    output: 'single',
+    bundler: 'metro',
+    favicon: './public/icons/icon-192.png',
+  },
+  experiments: {
+    ...config.experiments,
+    // GitHub Pages liegt unter /dayhopping/ – lokal und in der App leer
+    baseUrl: process.env.EXPO_BASE_URL || undefined,
+  },
   plugins: [
-    'expo-router',
+    // Im Browser alle Seiten in einem Paket laden (getrenntes Nachladen brach mit dem eigenen Einstieg index.ts)
+    ['expo-router', { asyncRoutes: false }],
     [
       'expo-build-properties',
       {
