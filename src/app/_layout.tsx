@@ -57,6 +57,7 @@ function Screens() {
       <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
       <Stack.Screen name="profile" options={{ title: 'Profil' }} />
       <Stack.Screen name="legal" options={{ title: 'Datenschutz & Regeln' }} />
+      <Stack.Screen name="kartentest" options={{ title: 'Kartentest' }} />
       <Stack.Screen name="round/[id]" options={{ headerShown: false }} />
     </Stack>
   );
