@@ -46,9 +46,10 @@ jobs:
         run: npm run web:build
       - name: Im iPhone-Browser testen
         run: |
+          npm install --no-save playwright@1 http-server@14 >/dev/null
           npx playwright install --with-deps chromium >/dev/null
           mkdir -p site && cp -r dist site/dayhopping
-          npx --yes http-server site -p 8080 -s --proxy http://localhost:8080/dayhopping/? &
+          npx http-server site -p 8080 -s --proxy http://localhost:8080/dayhopping/? &
           sleep 3
           node scripts/web-smoke.cjs http://localhost:8080/dayhopping/
           for f in web-*.png; do echo "BILD $f"; base64 -w0 "$f"; echo; done

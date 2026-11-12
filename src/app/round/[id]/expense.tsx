@@ -107,13 +107,12 @@ export default function ExpenseScreen() {
 
   const save = async () => {
     setError(null);
-    if (title.trim().length < 1) return setError('Wofür war die Ausgabe?');
     if (amount == null || amount <= 0) return setError('Bitte gib einen gültigen Betrag ein, z. B. 12,50.');
     if (ids.length === 0) return setError('Mindestens eine Person muss beteiligt sein.');
     if (remaining !== 0) return setError(remaining > 0 ? `Es fehlen noch ${formatEuro(remaining)} bei den Beträgen.` : `Die Beträge sind ${formatEuro(-remaining)} zu hoch.`);
     setBusy(true);
     const { error } = await supabase.rpc('save_expense', {
-      p_round: round.id, p_id: existing?.id ?? null, p_title: title, p_amount_cents: amount, p_payer: payer, p_station: stationId, p_split_mode: mode,
+      p_round: round.id, p_id: existing?.id ?? null, p_title: title.trim() || stations.find((s) => s.id === stationId)?.name || 'Ausgabe', p_amount_cents: amount, p_payer: payer, p_station: stationId, p_split_mode: mode,
       p_shares: ids.map((id) => ({ user_id: id, cents: shares.get(id) ?? 0, weight: mode === 'anteile' ? (weights[id] ?? 1) : null })),
     });
     setBusy(false);
@@ -168,7 +167,7 @@ export default function ExpenseScreen() {
           {amountText.length > 0 && amount == null && <Body small style={{ color: c.danger }}>Kein gültiger Betrag</Body>}
         </View>
 
-        <Field label="Wofür?" value={title} onChangeText={setTitle} editable={canEdit} placeholder="z. B. Pizza, Taxi, Eintritt" maxLength={80} />
+        <Field label="Wofür? (optional)" value={title} onChangeText={setTitle} editable={canEdit} placeholder="z. B. Pizza, Taxi, Eintritt" maxLength={80} />
 
         <View>
           <SectionLabel>Bezahlt von</SectionLabel>
