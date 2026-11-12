@@ -225,10 +225,15 @@ export default function MapTab() {
               <View style={{ width: size + 8, height: size + 8, alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: col, borderWidth: 3, borderColor: '#fff',
                   alignItems: 'center', justifyContent: 'center' }}>
-                  {done && !here && present === 0 ? <Ionicons name="checkmark" size={18} color="#fff" /> : (
-                    <Text style={{ color: '#fff', fontWeight: '800', fontSize: Math.round(size * 0.42), textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 2 }}>{i + 1}</Text>
-                  )}
+                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: Math.round(size * 0.42), textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 2 }}>{i + 1}</Text>
                 </View>
+                {done && (
+                  // Haken: Hier warst du schon
+                  <View style={{ position: 'absolute', bottom: 0, left: 0, width: 22, height: 22, borderRadius: 11, backgroundColor: '#22C55E',
+                    borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="checkmark" size={13} color="#fff" />
+                  </View>
+                )}
                 {present > 0 && (
                   <View style={{ position: 'absolute', top: 0, right: 0, minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 5, backgroundColor: '#1E1B16',
                     borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
@@ -328,6 +333,12 @@ export default function MapTab() {
                     {isOrganizer && <IconButton icon="create-outline" label="Station bearbeiten" onPress={() => router.push(`/round/${round.id}/station?stationId=${s.id}`)} />}
                     <IconButton icon="close" label="Stationsinfo schließen" onPress={() => setCardOpen(false)} />
                   </View>
+                  {myVisited.has(s.id) && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
+                      <Body small bold style={{ color: '#16A34A' }}>{here ? 'Du bist gerade hier' : 'Hier warst du schon'}</Body>
+                    </View>
+                  )}
                   {s.note ? <Body small numberOfLines={2}>{s.note}</Body> : null}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.s, minHeight: 30 }}>
                     {item.present.length > 0 && <AvatarStack profiles={item.present.map(profileOf)} />}

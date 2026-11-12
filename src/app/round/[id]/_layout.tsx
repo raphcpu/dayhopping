@@ -1,6 +1,7 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import { ActivityIndicator, View } from 'react-native';
+import { CheckinCelebration } from '@/components/CheckinCelebration';
 import { ProfileHost } from '@/components/ProfileSheet';
 import { fonts, useColors } from '@/lib/theme';
 import { useAuth } from '@/providers/AuthProvider';
@@ -33,6 +34,7 @@ function RoundStack() {
       <Stack.Screen name="station" options={{ title: 'Station', presentation: 'modal' }} />
       <Stack.Screen name="expense" options={{ title: 'Ausgabe', presentation: 'modal' }} />
     </Stack>
+    <CheckinCelebration />
     <ProfileHost />
     </>
   );
