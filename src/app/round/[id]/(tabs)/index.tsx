@@ -11,7 +11,7 @@ import { TrackingSheet } from '@/components/TrackingSheet';
 import { AvatarStack, Body, Button, Card, Heading, IconButton } from '@/components/ui';
 import { useBatteryOptimized } from '@/lib/battery';
 import { mapsConfigured } from '@/lib/config';
-import { glowLevel, stationColor, withAlpha } from '@/lib/stationColors';
+import { glowLevel, gradientRoute, stationColor, withAlpha } from '@/lib/stationColors';
 import { storage } from '@/lib/storage';
 import { formatTime, initials } from '@/lib/format';
 import { stationStats } from '@/lib/stats';
@@ -196,8 +196,9 @@ export default function MapTab() {
         showsPointsOfInterests={false}>
         {stations.length > 1 && (
           // Farbverlauf: jedes Teilstück geht von der Farbe einer Station in die der nächsten über
-          <Polyline coordinates={stations.map((s) => ({ latitude: s.lat, longitude: s.lng }))} strokeColor={stationColor(stations[0], 0)}
-            strokeColors={stations.map((s, i) => stationColor(s, i))} strokeWidth={6} lineCap="round" lineJoin="round" geodesic />
+          gradientRoute(stations.map((s) => ({ latitude: s.lat, longitude: s.lng })), stations.map((s, i) => stationColor(s, i))).map((seg, k) => (
+            <Polyline key={`route-${k}-${seg.color}`} coordinates={seg.coords} strokeColor={seg.color} strokeWidth={6} lineCap="round" zIndex={5} />
+          ))
         )}
         {stats.map((st, i) => (
           <StationGlow key={`glow-${st.station.id}`} lat={st.station.lat} lng={st.station.lng} radius={st.station.radius_m}

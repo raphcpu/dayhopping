@@ -43,3 +43,33 @@ export function glowLevel(present: number) {
     rings: Math.min(n, RAINBOW.length), // Regenbogenringe
   };
 }
+
+/** Mischt zwei "#RRGGBB"-Farben (t = 0 → a, t = 1 → b). */
+export function mixColors(a: string, b: string, t: number): string {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const ch = (shift: number) => Math.round(((pa >> shift) & 255) * (1 - t) + ((pb >> shift) & 255) * t);
+  return `#${[16, 8, 0].map((sh) => ch(sh).toString(16).padStart(2, '0')).join('')}`;
+}
+
+type Point = { latitude: number; longitude: number };
+
+/**
+ * Zerlegt die Route in kurze Stücke mit Zwischenfarben, damit jede Strecke von der
+ * Farbe der einen Station in die der nächsten übergeht. Funktioniert mit jedem
+ * Karten-Renderer (echte Verläufe zeichnet Android nur mit dem neuen Renderer).
+ */
+export function gradientRoute(points: Point[], colors: string[], steps = 12): { coords: [Point, Point]; color: string }[] {
+  const out: { coords: [Point, Point]; color: string }[] = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    for (let k = 0; k < steps; k++) {
+      const t0 = k / steps;
+      const t1 = (k + 1) / steps;
+      const at = (t: number): Point => ({ latitude: a.latitude + (b.latitude - a.latitude) * t, longitude: a.longitude + (b.longitude - a.longitude) * t });
+      out.push({ coords: [at(t0), at(t1)], color: mixColors(colors[i], colors[i + 1], (t0 + t1) / 2) });
+    }
+  }
+  return out;
+}
