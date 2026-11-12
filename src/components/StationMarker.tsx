@@ -5,6 +5,7 @@ import { Marker } from 'react-native-maps';
 import { initials } from '@/lib/format';
 import { LIVE_GREEN, OFFLINE_GREY } from '@/lib/presence';
 import { avatarUrl } from '@/lib/supabase';
+import { useMarkerSettle } from '@/lib/useMarkerSettle';
 import type { Profile } from '@/lib/types';
 
 const MAX_PETALS = 12;
@@ -31,6 +32,7 @@ export function StationMarker({ lat, lng, number, color, size, visited, selected
   const extra = n - shown.length;
   const slots = shown.length + (extra > 0 ? 1 : 0);
   const coordinate = { latitude: lat, longitude: lng };
+  const settling = useMarkerSettle();
 
   // Anker verschiebt das Bild um (dx, dy) Pixel vom Stationspunkt weg
   const anchorFor = (k: number) => {
@@ -41,7 +43,7 @@ export function StationMarker({ lat, lng, number, color, size, visited, selected
 
   return (
     <>
-      <Marker coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false} zIndex={selected ? 32 : 30} onPress={onPress}>
+      <Marker coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={settling} zIndex={selected ? 32 : 30} onPress={onPress}>
         <View style={{ width: size + 8, height: size + 8, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color, borderWidth: 3, borderColor: '#fff',
             alignItems: 'center', justifyContent: 'center' }}>
@@ -62,7 +64,7 @@ export function StationMarker({ lat, lng, number, color, size, visited, selected
           zIndex={selected ? 34 : 31} onPress={() => onPetalPress(p.id)} />
       ))}
       {extra > 0 && (
-        <Marker coordinate={coordinate} anchor={anchorFor(shown.length)} tracksViewChanges={false} zIndex={31} onPress={onPress}>
+        <Marker coordinate={coordinate} anchor={anchorFor(shown.length)} tracksViewChanges={settling} zIndex={31} onPress={onPress}>
           <View style={{ width: petal + 4, height: petal + 4, alignItems: 'center', justifyContent: 'center' }}>
             <View style={{ width: petal, height: petal, borderRadius: petal / 2, backgroundColor: '#151821', borderWidth: 2, borderColor: color,
               alignItems: 'center', justifyContent: 'center' }}>
@@ -82,8 +84,9 @@ function PetalMarker({ coordinate, anchor, profile, size, ringColor, grey, zInde
   const url = avatarUrl(profile.avatar_path);
   // Marker sind auf Android Bilder: neu zeichnen, bis das Profilbild geladen ist
   const [loaded, setLoaded] = useState(!url);
+  const settling = useMarkerSettle();
   return (
-    <Marker coordinate={coordinate} anchor={anchor} tracksViewChanges={!loaded} zIndex={zIndex} onPress={onPress}>
+    <Marker coordinate={coordinate} anchor={anchor} tracksViewChanges={settling || !loaded} zIndex={zIndex} onPress={onPress}>
       <View style={{ width: size + 4, height: size + 4, alignItems: 'center', justifyContent: 'center', opacity: grey ? 0.55 : 1 }}>
         <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: grey ? OFFLINE_GREY : profile.color, borderWidth: 3, borderColor: ringColor,
           overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>

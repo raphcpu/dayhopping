@@ -14,6 +14,7 @@ import { mapsConfigured } from '@/lib/config';
 import { LIVE_GREEN, OFFLINE_GREY } from '@/lib/presence';
 import { glowLevel, gradientRoute, stationColor, withAlpha } from '@/lib/stationColors';
 import { storage } from '@/lib/storage';
+import { useMarkerSettle } from '@/lib/useMarkerSettle';
 import { formatTime, initials } from '@/lib/format';
 import { stationStats } from '@/lib/stats';
 import { avatarUrl } from '@/lib/supabase';
@@ -30,8 +31,9 @@ const STALE_MS = 5 * 60_000; // wie LIVE_MS
 function usePersonMarker({ profile, stale, mine }: { profile: Profile; stale: boolean; mine: boolean }) {
   const url = avatarUrl(profile.avatar_path);
   const [loaded, setLoaded] = useState(!url);
+  const settling = useMarkerSettle();
   return {
-    tracks: !loaded,
+    tracks: settling || !loaded,
     view: (
       <View style={{ alignItems: 'center', opacity: stale ? 0.5 : 1 }}>
         {/* Grüner Rand = live, grau = länger kein Standort */}
