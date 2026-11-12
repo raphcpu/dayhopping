@@ -68,8 +68,10 @@ let c = await q(`select * from checkins`);
 ok(c.length === 1 && c[0].station_id === s1 && c[0].left_at === null, 'Auto-Check-in Station 1');
 await rep(53.5500, 9.9903, 10, 1);
 ok((await q(`select count(*)::int c from checkins`))[0].c === 1, 'Kein doppelter Check-in');
-await rep(53.5500, 9.9912, 10, 2); // ~80 m: im Puffer
-ok((await q(`select left_at from checkins`))[0].left_at === null, 'Am Rand (80 m) bleibt eingecheckt');
+await rep(53.5500, 9.9905, 10, 2); // ~33 m: noch im Radius
+ok((await q(`select left_at from checkins`))[0].left_at === null, 'Innerhalb des Radius bleibt eingecheckt');
+await rep(53.5500, 9.9912, 10, 2.5); // ~80 m: Radius verlassen
+ok((await q(`select left_at from checkins`))[0].left_at !== null, 'Auto-Check-out direkt beim Verlassen des Radius (80 m)');
 await rep(53.5500, 9.9930, 10, 3); // ~200 m
 ok((await q(`select left_at from checkins`))[0].left_at !== null, 'Auto-Check-out bei 200 m');
 await rep(53.5500, 9.9901, 10, 5);

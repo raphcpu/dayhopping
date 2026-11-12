@@ -195,3 +195,73 @@ create unique index if not exists stations_color_unique on public.stations (roun
 -- Einheitlicher Check-in-Radius: alle Stationen 60 m (die App bietet keine Auswahl mehr)
 alter table public.stations alter column radius_m set default 60;
 update public.stations set radius_m = 60 where radius_m <> 60;
+
+-- Auschecken direkt beim Verlassen des Check-in-Radius
+create or replace function public.report_location(
+  p_lat double precision, p_lng double precision,
+  p_accuracy real default null, p_heading real default null, p_speed real default null,
+  p_recorded_at timestamptz default now())
+returns integer language plpgsql security definer set search_path = public as $$
+declare
+  v_uid    uuid := auth.uid();
+  v_at     timestamptz := least(coalesce(p_recorded_at, now()), now());
+  v_count  integer := 0;
+  v_round  uuid;
+  v_inside uuid;
+  v_id     uuid;
+begin
+  if v_uid is null then raise exception 'Nicht angemeldet'; end if;
+
+  for v_round in
+    select m.round_id from round_members m join rounds r on r.id = m.round_id
+    where m.user_id = v_uid and m.sharing and r.status = 'aktiv'
+  loop
+    v_count := v_count + 1;
+
+    insert into locations (round_id, user_id, lat, lng, accuracy, heading, speed, recorded_at)
+    values (v_round, v_uid, p_lat, p_lng, p_accuracy, p_heading, p_speed, v_at)
+    on conflict (round_id, user_id) do update
+      set lat = excluded.lat, lng = excluded.lng, accuracy = excluded.accuracy,
+          heading = excluded.heading, speed = excluded.speed, recorded_at = excluded.recorded_at
+      where locations.recorded_at <= excluded.recorded_at;
+    -- Verspätet eingetroffene, ältere Meldung: nichts weiter tun
+    if not found then continue; end if;
+
+    -- In welcher Station steht die Person? (nur bei brauchbarer Genauigkeit)
+    v_inside := null;
+    if coalesce(p_accuracy, 0) <= 100 then
+      select s.id into v_inside from stations s
+      where s.round_id = v_round and distance_m(p_lat, p_lng, s.lat, s.lng) <= s.radius_m
+      order by distance_m(p_lat, p_lng, s.lat, s.lng) limit 1;
+    end if;
+
+    -- Offenen Check-in schließen, sobald der Check-in-Radius verlassen wird. Ungenaue
+    -- Messungen (über 100 m) checken niemanden aus. Wer binnen 10 Minuten zurückkommt,
+    -- setzt den Besuch fort (siehe unten), statt neu gezählt zu werden.
+    update checkins c set left_at = v_at
+      from stations s
+     where s.id = c.station_id
+       and c.round_id = v_round and c.user_id = v_uid and c.left_at is null
+       and c.station_id is distinct from v_inside
+       and (v_inside is not null
+            or (coalesce(p_accuracy, 0) <= 100 and distance_m(p_lat, p_lng, s.lat, s.lng) > s.radius_m));
+
+    if v_inside is not null and not exists (
+         select 1 from checkins where round_id = v_round and user_id = v_uid and left_at is null) then
+      -- Kurz draußen gewesen? Dann den letzten Besuch fortsetzen statt neu zählen.
+      update checkins set left_at = null
+       where id = (select id from checkins
+                   where round_id = v_round and user_id = v_uid and station_id = v_inside
+                     and left_at > v_at - interval '10 minutes'
+                   order by left_at desc limit 1)
+      returning id into v_id;
+      if v_id is null then
+        insert into checkins (round_id, station_id, user_id, arrived_at, automatic)
+        values (v_round, v_inside, v_uid, v_at, true);
+      end if;
+    end if;
+  end loop;
+
+  return v_count;
+end;
+$$;

@@ -449,15 +449,16 @@ begin
       order by distance_m(p_lat, p_lng, s.lat, s.lng) limit 1;
     end if;
 
-    -- Offenen Check-in schließen, wenn die Station verlassen wurde. 40 m Puffer
-    -- plus Messungenauigkeit verhindern Flattern am Rand.
+    -- Offenen Check-in schließen, sobald der Check-in-Radius verlassen wird. Ungenaue
+    -- Messungen (über 100 m) checken niemanden aus. Wer binnen 10 Minuten zurückkommt,
+    -- setzt den Besuch fort (siehe unten), statt neu gezählt zu werden.
     update checkins c set left_at = v_at
       from stations s
      where s.id = c.station_id
        and c.round_id = v_round and c.user_id = v_uid and c.left_at is null
        and c.station_id is distinct from v_inside
        and (v_inside is not null
-            or distance_m(p_lat, p_lng, s.lat, s.lng) > s.radius_m + 40 + least(coalesce(p_accuracy, 0), 60));
+            or (coalesce(p_accuracy, 0) <= 100 and distance_m(p_lat, p_lng, s.lat, s.lng) > s.radius_m));
 
     if v_inside is not null and not exists (
          select 1 from checkins where round_id = v_round and user_id = v_uid and left_at is null) then
