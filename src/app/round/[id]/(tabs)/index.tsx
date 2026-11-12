@@ -64,6 +64,8 @@ export default function MapTab() {
   const map = useRef<MapView>(null);
   const list = useRef<FlatList>(null);
   const [selected, setSelected] = useState(0);
+  // Stationsinfo erscheint erst nach Antippen einer Station
+  const [cardOpen, setCardOpen] = useState(false);
   const [trackingOpen, setTrackingOpen] = useState(false);
   // Zeitpunkt der zuletzt geschlossenen Durchsage; bleibt über App-Neustarts erhalten
   const [dismissedUntil, setDismissedUntil] = useState<string | null>(null);
@@ -186,10 +188,14 @@ export default function MapTab() {
         provider={PROVIDER_GOOGLE}
         style={{ flex: 1 }}
         onMapReady={onMapReady}
+        onPress={(e) => {
+          // Tippen auf freie Kartenfläche schließt die Stationsinfo (Marker-Tipps auf iOS ausgenommen)
+          if ((e.nativeEvent as { action?: string }).action !== 'marker-press') setCardOpen(false);
+        }}
         initialRegion={first
           ? { latitude: first.lat, longitude: first.lng, latitudeDelta: 0.03, longitudeDelta: 0.03 }
           : { latitude: 51.1657, longitude: 10.4515, latitudeDelta: 9, longitudeDelta: 9 }}
-        mapPadding={{ top: 56, right: 0, bottom: stations.length ? 196 : 120, left: 0 }}
+        mapPadding={{ top: 56, right: 0, bottom: cardOpen ? 196 : 70, left: 0 }}
         toolbarEnabled={false}
         showsCompass={false}
         showsMyLocationButton={false}
@@ -215,7 +221,7 @@ export default function MapTab() {
           const size = glowLevel(present).markerSize + (on ? 6 : 0);
           return (
             <Marker key={`${s.id}-${i}-${here}-${done}-${on}-${present}-${col}`} coordinate={{ latitude: s.lat, longitude: s.lng }} anchor={{ x: 0.5, y: 0.5 }}
-              tracksViewChanges={false} zIndex={on ? 32 : 30} onPress={() => focusStation(i)}>
+              tracksViewChanges={false} zIndex={on ? 32 : 30} onPress={() => { focusStation(i, false); setCardOpen(true); }}>
               <View style={{ width: size + 8, height: size + 8, alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: col, borderWidth: 3, borderColor: '#fff',
                   alignItems: 'center', justifyContent: 'center' }}>
@@ -302,9 +308,10 @@ export default function MapTab() {
             <Body muted>{isOrganizer ? 'Lege die erste Station an, dann erscheint hier die Route.' : 'Die Organisation hat noch keine Stationen angelegt.'}</Body>
             {isOrganizer && <Button title="Station hinzufügen" icon="add" onPress={() => router.push(`/round/${round.id}/station`)} />}
           </Card>
-        ) : (
+        ) : !cardOpen ? null : (
           <FlatList
             ref={list}
+            initialScrollIndex={selected}
             data={stats}
             horizontal
             keyExtractor={(s) => s.station.id}
@@ -331,6 +338,7 @@ export default function MapTab() {
                       </Body>
                     </View>
                     {isOrganizer && <IconButton icon="create-outline" label="Station bearbeiten" onPress={() => router.push(`/round/${round.id}/station?stationId=${s.id}`)} />}
+                    <IconButton icon="close" label="Stationsinfo schließen" onPress={() => setCardOpen(false)} />
                   </View>
                   {s.note ? <Body small numberOfLines={2}>{s.note}</Body> : null}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.s, minHeight: 30 }}>
