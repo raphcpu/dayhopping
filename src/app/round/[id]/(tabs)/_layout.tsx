@@ -4,7 +4,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Heading, IconButton, type IconName, StatusPill } from '@/components/ui';
-import { space, useColors } from '@/lib/theme';
+import { softShadow, space, useColors } from '@/lib/theme';
 import { useRound } from '@/providers/RoundProvider';
 
 function Header() {
@@ -42,8 +42,8 @@ export default function TabsLayout() {
         tabBarActiveTintColor: c.accent,
         tabBarHideOnKeyboard: true,
         tabBarInactiveTintColor: c.muted,
-        tabBarStyle: { backgroundColor: c.bg, borderTopColor: c.line },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+        tabBarStyle: { backgroundColor: c.card, borderTopWidth: 0, height: undefined, paddingTop: 6, ...softShadow(c, 2) },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginBottom: 2 },
         sceneStyle: { backgroundColor: c.bg },
       }}>
       <Tabs.Screen name="index" options={{ title: 'Karte', tabBarIcon: icon('map') }} />

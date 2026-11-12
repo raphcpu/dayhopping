@@ -162,7 +162,7 @@ export default function StationScreen() {
             <MapView ref={map} provider={PROVIDER_GOOGLE} style={{ flex: 1 }} initialRegion={start} toolbarEnabled={false}
               onLongPress={(e) => place(e.nativeEvent.coordinate)} onPoiClick={(e) => { place(e.nativeEvent.coordinate); if (!name.trim()) setName(e.nativeEvent.name.split('\n')[0]); }}>
               {pin && <Marker coordinate={pin} draggable onDragEnd={(e) => place(e.nativeEvent.coordinate)} pinColor={c.accent} />}
-              {pin && <Circle center={pin} radius={STATION_RADIUS_M} strokeColor={c.accent} strokeWidth={1.5} fillColor="rgba(255,90,54,0.16)" />}
+              {pin && <Circle center={pin} radius={STATION_RADIUS_M} strokeColor={c.accent} strokeWidth={1.5} fillColor="rgba(91,61,245,0.14)" />}
             </MapView>
           </View>
           )}

@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: process.env.APP_IDENTIFIER || 'de.dayhop.app',
     adaptiveIcon: {
-      backgroundColor: '#FF5A36',
+      backgroundColor: '#5B3DF5',
       foregroundImage: './assets/android-icon-foreground.png',
       monochromeImage: './assets/android-icon-monochrome.png',
     },
@@ -47,7 +47,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     'expo-font',
-    ['expo-splash-screen', { backgroundColor: '#FF5A36', image: './assets/splash-icon.png', imageWidth: 160 }],
+    ['expo-splash-screen', { backgroundColor: '#5B3DF5', image: './assets/splash-icon.png', imageWidth: 160 }],
     [
       'react-native-maps',
       { iosGoogleMapsApiKey: googleMapsApiKey, androidGoogleMapsApiKey: googleMapsApiKey },
@@ -64,7 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         isAndroidForegroundServiceEnabled: true,
       },
     ],
-    ['expo-notifications', { color: '#FF5A36' }],
+    ['expo-notifications', { color: '#5B3DF5' }],
     [
       'expo-image-picker',
       {

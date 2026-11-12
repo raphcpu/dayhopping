@@ -107,7 +107,7 @@ export default function Home() {
           <EmptyState icon="footsteps" title="Noch kein Hop" text="Plane einen Tag mit mehreren Stationen oder tritt mit einem Einladungscode einem Hop bei." />
         ) : undefined}
         renderItem={({ item }) => (
-          <Card onPress={() => router.push(`/round/${item.id}`)} style={item.status === 'aktiv' ? { borderColor: c.teal, borderWidth: 2 } : undefined}>
+          <Card onPress={() => router.push(`/round/${item.id}`)} style={item.status === 'aktiv' ? { borderColor: c.accent, borderWidth: 2 } : undefined}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.m }}>
               <View style={{ flex: 1, gap: 4 }}>
                 <Heading size={21}>{item.name}</Heading>
@@ -122,7 +122,7 @@ export default function Home() {
               </View>
               {item.role === 'organizer' && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <Ionicons name="star" size={15} color={c.sun} />
+                  <Ionicons name="star" size={15} color={c.muted} />
                   <Body muted small>Du organisierst</Body>
                 </View>
               )}

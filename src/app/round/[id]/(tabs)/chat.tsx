@@ -9,7 +9,7 @@ import { Avatar, Body, EmptyState } from '@/components/ui';
 import { errorText, formatTime } from '@/lib/format';
 import { confirmBlock, reportContent } from '@/lib/moderation';
 import { supabase } from '@/lib/supabase';
-import { radius, space, useColors } from '@/lib/theme';
+import { radius, softShadow, space, useColors } from '@/lib/theme';
 import type { Message } from '@/lib/types';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRound } from '@/providers/RoundProvider';
@@ -83,12 +83,13 @@ export default function ChatTab() {
     const p = profileOf(m.user_id);
     if (m.kind === 'announcement') {
       return (
-        <Pressable onLongPress={() => onLongPress(m)} style={{ backgroundColor: c.sun, borderRadius: radius.m, padding: space.l, marginVertical: 6, gap: 4 }}>
+        <Pressable onLongPress={() => onLongPress(m)} style={{ backgroundColor: c.card, borderRadius: radius.l, padding: space.l, marginVertical: 10, gap: 6,
+          borderLeftWidth: 4, borderLeftColor: c.accent, ...softShadow(c, 1) }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Ionicons name="megaphone" size={16} color="#1E1B16" />
-            <Text style={{ color: '#1E1B16', fontWeight: '800', fontSize: 12, letterSpacing: 0.5 }}>DURCHSAGE VON {p.display_name.toUpperCase()} · {formatTime(m.created_at)}</Text>
+            <Ionicons name="megaphone" size={16} color={c.accent} />
+            <Text style={{ color: c.muted, fontWeight: '600', fontSize: 13 }}>Durchsage von {p.display_name}, {formatTime(m.created_at)}</Text>
           </View>
-          <Text style={{ color: '#1E1B16', fontSize: 17, lineHeight: 23, fontWeight: '500' }}>{m.body}</Text>
+          <Text style={{ color: c.ink, fontSize: 17, lineHeight: 24, fontWeight: '500' }}>{m.body}</Text>
         </Pressable>
       );
     }
@@ -104,18 +105,18 @@ export default function ChatTab() {
           </Pressable>
         ) : <View style={{ width: 30 }} />)}
         <Pressable onLongPress={() => onLongPress(m)} delayLongPress={350}
-          style={{ maxWidth: '78%', backgroundColor: mine ? c.bubbleMine : c.bubbleOther, borderRadius: 20, borderBottomRightRadius: mine ? 6 : 20, borderBottomLeftRadius: mine ? 20 : 6,
+          style={{ maxWidth: '78%', backgroundColor: mine ? c.bubbleMine : c.bubbleOther, borderRadius: 22, borderBottomRightRadius: mine ? 6 : 22, borderBottomLeftRadius: mine ? 22 : 6, ...(mine ? null : softShadow(c, 1)),
             paddingHorizontal: 14, paddingVertical: 9 }}>
           {!mine && startsGroup && <Text style={{ color: p.color, fontWeight: '700', fontSize: 13, marginBottom: 2 }}>{p.display_name}</Text>}
-          <Text style={{ color: mine ? '#fff' : c.ink, fontSize: 16, lineHeight: 22 }}>{m.body}</Text>
-          <Text style={{ color: mine ? 'rgba(255,255,255,0.75)' : c.muted, fontSize: 11, alignSelf: 'flex-end', marginTop: 2 }}>{formatTime(m.created_at)}</Text>
+          <Text style={{ color: mine ? c.bg : c.ink, fontSize: 16, lineHeight: 22 }}>{m.body}</Text>
+          <Text style={{ color: c.muted, fontSize: 11, alignSelf: 'flex-end', marginTop: 2 }}>{formatTime(m.created_at)}</Text>
         </Pressable>
       </View>
     );
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.sunken }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 54}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 54}>
       <FlatList
         data={messages}
         inverted={messages.length > 0}
@@ -126,20 +127,21 @@ export default function ChatTab() {
         contentContainerStyle={{ paddingHorizontal: space.m, paddingVertical: space.m, flexGrow: 1 }}
         ListEmptyComponent={<EmptyState icon="chatbubbles" title="Noch ist es still" text="Schreib die erste Nachricht an deine Gruppe." />}
       />
-      <View style={{ backgroundColor: announce ? c.sunSoft : c.bg, borderTopWidth: 1, borderTopColor: announce ? c.sun : c.line, paddingHorizontal: space.s, paddingVertical: space.s, gap: 6 }}>
-        {announce && <Body small bold style={{ paddingHorizontal: space.s }}>Durchsage: geht als Push an alle, auch an stummgeschaltete.</Body>}
+      <View style={{ backgroundColor: c.bg, paddingHorizontal: space.m, paddingTop: space.s, paddingBottom: space.m, gap: 8 }}>
+        {announce && <Body small style={{ paddingHorizontal: space.s, color: c.accent }}>Durchsage: geht als Push an alle, auch an stummgeschaltete.</Body>}
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
           {isOrganizer && (
             <Pressable onPress={() => setAnnounce((a) => !a)} accessibilityRole="button" accessibilityLabel="Als Durchsage senden" accessibilityState={{ selected: announce }}
-              style={{ width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: announce ? c.sun : c.sunken }}>
-              <Ionicons name="megaphone" size={22} color={announce ? '#1E1B16' : c.muted} />
+              style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: announce ? c.accentSoft : c.card, ...softShadow(c, 1) }}>
+              <Ionicons name="megaphone" size={21} color={announce ? c.accent : c.muted} />
             </Pressable>
           )}
           <TextInput value={text} onChangeText={setText} placeholder={announce ? 'Durchsage an alle …' : 'Nachricht'} placeholderTextColor={c.muted} multiline maxLength={2000}
-            style={{ flex: 1, minHeight: 46, maxHeight: 130, backgroundColor: c.card, borderRadius: 23, borderWidth: 1, borderColor: c.line, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, fontSize: 16, color: c.ink }} />
+            style={{ flex: 1, minHeight: 48, maxHeight: 130, backgroundColor: c.card, borderRadius: 24, borderWidth: 2, borderColor: announce ? c.accent : 'transparent',
+              paddingHorizontal: 18, paddingTop: 13, paddingBottom: 13, fontSize: 16, color: c.ink, ...softShadow(c, 1) }} />
           <Pressable onPress={send} disabled={!text.trim() || sending} accessibilityRole="button" accessibilityLabel="Senden"
-            style={{ width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: c.accent, opacity: !text.trim() || sending ? 0.4 : 1 }}>
-            <Ionicons name="arrow-up" size={24} color="#fff" />
+            style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: text.trim() ? c.accent : c.sunken }}>
+            <Ionicons name="arrow-up" size={24} color={text.trim() ? c.onAccent : c.muted} />
           </Pressable>
         </View>
       </View>

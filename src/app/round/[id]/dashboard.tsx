@@ -17,7 +17,7 @@ import { stationColor } from '@/lib/stationColors';
 import { formatEuro } from '@/lib/money';
 import { memberStats, stationStats } from '@/lib/stats';
 import { supabase } from '@/lib/supabase';
-import { fonts, radius, space, useColors } from '@/lib/theme';
+import { fonts, radius, softShadow, space, useColors } from '@/lib/theme';
 import type { Member, Report, RoundStatus } from '@/lib/types';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRound } from '@/providers/RoundProvider';
@@ -173,7 +173,7 @@ export default function Dashboard() {
   const otherOrganizers = members.some((m) => m.role === 'organizer' && m.user_id !== userId);
 
   const tile = (value: string, label: string) => (
-    <View style={{ flex: 1, backgroundColor: c.card, borderRadius: radius.m, padding: space.m, borderWidth: 1, borderColor: c.line }}>
+    <View style={{ flex: 1, backgroundColor: c.card, borderRadius: radius.l, padding: space.l, ...softShadow(c, 1) }}>
       <Text style={{ fontFamily: fonts.display, fontSize: 24, color: c.ink }} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
       <Body muted small>{label}</Body>
     </View>
@@ -229,7 +229,7 @@ export default function Dashboard() {
       {openReports.length > 0 && (
         <View>
           <SectionLabel>Meldungen ({openReports.length})</SectionLabel>
-          <Card style={{ paddingVertical: space.s, borderColor: c.danger, borderWidth: 1.5 }}>
+          <Card style={{ paddingVertical: space.s, borderLeftWidth: 4, borderLeftColor: c.danger }}>
             {openReports.map((r, i) => (
               <View key={r.id}>
                 {i > 0 && <Divider />}
@@ -242,7 +242,7 @@ export default function Dashboard() {
       )}
 
       {isOrganizer && (
-        <Button title="Durchsage an alle" variant="sun" icon="megaphone" onPress={() => setAnnounceOpen(true)} />
+        <Button title="Durchsage an alle" variant="soft" icon="megaphone" onPress={() => setAnnounceOpen(true)} />
       )}
 
       {/* Stationen mit Besuchsstatistik */}
@@ -304,7 +304,7 @@ export default function Dashboard() {
                   subtitle={where}
                   right={
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      {m.role === 'organizer' && <Ionicons name="star" size={16} color={c.sun} accessibilityLabel="Organisator" />}
+                      {m.role === 'organizer' && <Ionicons name="star" size={16} color={c.muted} accessibilityLabel="Organisator" />}
                       {isOrganizer && m.user_id !== userId && <Ionicons name="ellipsis-horizontal" size={20} color={c.muted} />}
                     </View>
                   }

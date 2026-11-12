@@ -16,7 +16,7 @@ export default function MapTestScreen() {
           initialRegion={{ latitude: 53.5565, longitude: 9.987, latitudeDelta: 0.02, longitudeDelta: 0.02 }}
           onMapReady={() => setStatus('KARTE BEREIT')} onMapLoaded={() => setStatus('KARTE GELADEN')}>
           <Marker coordinate={{ latitude: 53.553, longitude: 9.9929 }} title="Jungfernstieg" />
-          <Circle center={{ latitude: 53.5605, longitude: 9.981 }} radius={120} fillColor="rgba(255,90,54,0.3)" strokeColor="#FF5A36" />
+          <Circle center={{ latitude: 53.5605, longitude: 9.981 }} radius={120} fillColor="rgba(91,61,245,0.25)" strokeColor="#5B3DF5" />
         </MapView>
       ) : <View style={{ flex: 1 }} />}
       <Text style={{ position: 'absolute', bottom: 40, left: 16, right: 16, textAlign: 'center', backgroundColor: '#fff', padding: 8, fontWeight: '700' }}>

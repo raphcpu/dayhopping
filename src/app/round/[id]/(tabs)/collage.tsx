@@ -11,7 +11,7 @@ import { Body, Button, Chip, EmptyState, IconButton, Sheet } from '@/components/
 import { errorText, formatTime } from '@/lib/format';
 import { confirmBlock, reportContent } from '@/lib/moderation';
 import { deleteMedia, pickFromLibrary, signedUrls, takeWithCamera, uploadToCollage } from '@/lib/media';
-import { radius, space, useColors } from '@/lib/theme';
+import { radius, softShadow, space, useColors } from '@/lib/theme';
 import type { Media } from '@/lib/types';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRound } from '@/providers/RoundProvider';
@@ -201,7 +201,7 @@ export default function CollageTab() {
 
       <View style={{ position: 'absolute', right: space.l, bottom: space.l }}>
         <Button title="Hinzufügen" icon="camera" onPress={() => setAddOpen(true)} disabled={!!progress}
-          style={{ elevation: 5, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, paddingHorizontal: 24 }} />
+          style={{ paddingHorizontal: 26, ...softShadow(c, 2) }} />
       </View>
 
       <Sheet visible={addOpen} onClose={() => setAddOpen(false)} title="Zur Collage hinzufügen">

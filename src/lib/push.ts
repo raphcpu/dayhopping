@@ -23,7 +23,7 @@ export async function registerForPush(): Promise<boolean> {
       name: 'Nachrichten & Durchsagen',
       // eslint-disable-next-line import/namespace -- wird über "export *" bereitgestellt
       importance: Notifications.AndroidImportance.HIGH,
-      lightColor: '#FF5A36',
+      lightColor: '#5B3DF5',
     });
   }
   let { status } = await Notifications.getPermissionsAsync();

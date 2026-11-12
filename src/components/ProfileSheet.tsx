@@ -86,7 +86,7 @@ export function ProfileHost() {
           <View style={{ alignItems: 'center', gap: 4 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Heading size={26}>{p.display_name}</Heading>
-              {member?.role === 'organizer' && <Ionicons name="star" size={20} color={c.sun} accessibilityLabel="Organisation" />}
+              {member?.role === 'organizer' && <Ionicons name="star" size={20} color={c.accent} accessibilityLabel="Organisation" />}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: p.color }} />

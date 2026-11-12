@@ -7,7 +7,7 @@ import { shareCostsCsv, sharePdf } from '@/lib/export';
 import { errorText, formatTime } from '@/lib/format';
 import { computeBalances, formatEuro, settleUp, type Transfer } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
-import { fonts, space, useColors } from '@/lib/theme';
+import { fonts, radius, softShadow, space, useColors } from '@/lib/theme';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRound } from '@/providers/RoundProvider';
 
@@ -87,7 +87,7 @@ export default function CostsTab() {
             </View>
             <Button small variant="soft" icon="share-outline" title="Export" onPress={() => setExportOpen(true)} style={{ alignSelf: 'flex-start' }} />
           </View>
-          <View style={{ backgroundColor: mine > 0 ? c.teal : mine < 0 ? c.accent : 'rgba(127,127,127,0.25)', borderRadius: 14, padding: space.m, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ backgroundColor: mine > 0 ? c.teal : mine < 0 ? c.danger : 'rgba(127,127,127,0.25)', borderRadius: radius.m, padding: space.m, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{mine > 0 ? 'Du bekommst noch' : mine < 0 ? 'Du schuldest noch' : 'Du bist ausgeglichen'}</Text>
             {mine !== 0 && <Text style={{ color: '#fff', fontSize: 19, fontWeight: '800' }}>{formatEuro(Math.abs(mine))}</Text>}
           </View>
@@ -221,7 +221,7 @@ export default function CostsTab() {
 
       <View style={{ position: 'absolute', right: space.l, bottom: space.l }}>
         <Button title="Ausgabe" icon="add" onPress={() => router.push(`/round/${round.id}/expense`)}
-          style={{ elevation: 5, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, paddingHorizontal: 24 }} />
+          style={{ paddingHorizontal: 26, ...softShadow(c, 2) }} />
       </View>
 
       <Sheet visible={exportOpen} onClose={() => setExportOpen(false)} title="Exportieren">

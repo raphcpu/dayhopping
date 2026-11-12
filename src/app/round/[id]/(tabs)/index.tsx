@@ -16,7 +16,7 @@ import { storage } from '@/lib/storage';
 import { errorText, formatTime, initials } from '@/lib/format';
 import { stationStats } from '@/lib/stats';
 import { avatarUrl, supabase } from '@/lib/supabase';
-import { radius, space, useColors } from '@/lib/theme';
+import { radius, softShadow, space, useColors } from '@/lib/theme';
 import type { Profile } from '@/lib/types';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRound } from '@/providers/RoundProvider';
@@ -170,13 +170,13 @@ export default function MapTab() {
   const chip = !active
     ? { icon: 'pause-circle' as const, text: round.status === 'geplant' ? 'Ortung startet mit dem Hop' : 'Hop beendet', bg: c.card, fg: c.muted }
     : !me?.sharing
-      ? { icon: 'eye-off' as const, text: 'Standort pausiert', bg: c.card, fg: c.ink }
+      ? { icon: 'eye-off' as const, text: 'Standort pausiert', bg: c.card, fg: c.muted }
       : tracking === 'hintergrund' && battery.optimized
-        ? { icon: 'battery-dead' as const, text: 'Akku-Sparen bremst Ortung', bg: c.sunSoft, fg: c.ink }
+        ? { icon: 'battery-dead' as const, text: 'Akku-Sparen bremst Ortung', bg: c.card, fg: c.danger }
       : tracking === 'hintergrund'
-        ? { icon: 'navigate' as const, text: 'Standort wird geteilt', bg: c.tealSoft, fg: c.teal }
+        ? { icon: 'navigate' as const, text: 'Standort wird geteilt', bg: c.card, fg: c.teal }
         : tracking === 'vordergrund'
-          ? { icon: 'warning' as const, text: 'Nur bei geöffneter App', bg: c.sunSoft, fg: c.ink }
+          ? { icon: 'warning' as const, text: 'Nur bei geöffneter App', bg: c.card, fg: c.danger }
           : { icon: 'navigate-outline' as const, text: 'Standort freigeben', bg: c.accent, fg: c.onAccent };
 
   const first = stations[0];
@@ -243,31 +243,31 @@ export default function MapTab() {
       {/* Oben: Durchsage und Ortungsstatus */}
       <View pointerEvents="box-none" style={{ position: 'absolute', top: space.s, left: space.m, right: space.m, gap: space.s }}>
         {announcement && (
-          <View style={{ backgroundColor: c.sun, borderRadius: radius.m, padding: space.m, flexDirection: 'row', gap: space.m, alignItems: 'flex-start',
-            shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 }}>
-            <Ionicons name="megaphone" size={22} color="#1E1B16" style={{ marginTop: 1 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: '#1E1B16', fontWeight: '700', fontSize: 12 }}>DURCHSAGE · {formatTime(announcement.created_at)}</Text>
-              <Text style={{ color: '#1E1B16', fontSize: 16, lineHeight: 21 }}>{announcement.body}</Text>
+          <View style={{ backgroundColor: c.card, borderRadius: radius.l, padding: space.l, flexDirection: 'row', gap: space.m, alignItems: 'flex-start', ...softShadow(c, 2) }}>
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="megaphone" size={19} color={c.onAccent} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ color: c.muted, fontWeight: '600', fontSize: 13 }}>Durchsage um {formatTime(announcement.created_at)}</Text>
+              <Text style={{ color: c.ink, fontSize: 16, lineHeight: 22, fontWeight: '500' }}>{announcement.body}</Text>
             </View>
             <Pressable onPress={() => dismissAnnouncement(announcement.created_at)} hitSlop={12} accessibilityLabel="Durchsage ausblenden">
-              <Ionicons name="close" size={22} color="#1E1B16" />
+              <Ionicons name="close" size={22} color={c.muted} />
             </Pressable>
           </View>
         )}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }} pointerEvents="box-none">
           <Pressable onPress={() => setTrackingOpen(true)} accessibilityRole="button"
-            style={{ backgroundColor: chip.bg, borderRadius: radius.pill, minHeight: 40, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 7,
-              shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 }}>
+            style={{ backgroundColor: chip.bg, borderRadius: radius.pill, minHeight: 42, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8, ...softShadow(c, 2) }}>
             <Ionicons name={chip.icon} size={17} color={chip.fg} />
             <Text style={{ color: chip.fg, fontWeight: '700', fontSize: 14 }}>{chip.text}</Text>
           </Pressable>
           <View style={{ gap: space.s }}>
-            <View style={{ elevation: 3, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, borderRadius: 24 }}>
+            <View style={{ borderRadius: 24, ...softShadow(c, 2) }}>
               <IconButton icon="scan" label="Alles zeigen" onPress={fitAll} bg={c.card} size={48} />
             </View>
             {userId && locations.some((l) => l.user_id === userId) && (
-              <View style={{ elevation: 3, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, borderRadius: 24 }}>
+              <View style={{ borderRadius: 24, ...softShadow(c, 2) }}>
                 <IconButton icon="locate" label="Mein Standort" onPress={() => focusPerson(userId)} bg={c.card} size={48} />
               </View>
             )}
@@ -301,7 +301,7 @@ export default function MapTab() {
               const s = item.station;
               const here = myOpen?.station_id === s.id;
               return (
-                <Card style={{ width: CARD_WIDTH, padding: space.m, gap: space.s, elevation: 4, shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } }}
+                <Card style={{ width: CARD_WIDTH, padding: space.l, gap: space.m, ...softShadow(c, 2) }}
                   onPress={() => focusStation(index)}>
                   <View style={{ flexDirection: 'row', gap: space.m, alignItems: 'center' }}>
                     <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: stationColor(s, index), alignItems: 'center', justifyContent: 'center' }}>

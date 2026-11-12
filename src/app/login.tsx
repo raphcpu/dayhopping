@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Body, Button, Field, Segmented } from '@/components/ui';
 import { errorText } from '@/lib/format';
 import { isConfigured } from '@/lib/supabase';
-import { fonts, space, useColors } from '@/lib/theme';
+import { BRAND, fonts, space, useColors } from '@/lib/theme';
 import { useAuth } from '@/providers/AuthProvider';
 
 export default function Login() {
@@ -44,11 +44,14 @@ export default function Login() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.accent }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: '#151821' }}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
         <View style={{ paddingTop: insets.top + 56, paddingHorizontal: space.xl, paddingBottom: 40 }}>
-          <Text style={{ fontFamily: fonts.displayHeavy, fontSize: 54, color: '#fff', letterSpacing: -2, lineHeight: 56 }}>Day{'\n'}Hop</Text>
-          <Text style={{ color: '#fff', fontSize: 18, marginTop: space.m, opacity: 0.92, lineHeight: 25 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
+            <Text style={{ fontFamily: fonts.displayHeavy, fontSize: 56, color: '#fff', letterSpacing: -2.2, lineHeight: 58 }}>Day{'\n'}Hop</Text>
+            <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: BRAND, marginBottom: 14 }} />
+          </View>
+          <Text style={{ color: '#C9CEDA', fontSize: 18, marginTop: space.m, lineHeight: 25 }}>
             Ein Tag, viele Stationen,{'\n'}alle zusammen.
           </Text>
         </View>
