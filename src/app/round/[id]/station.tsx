@@ -7,15 +7,14 @@ import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateField } from '@/components/DateField';
 import { MapMissing } from '@/components/MapMissing';
-import { Body, Button, Chip, Field, SectionLabel } from '@/components/ui';
+import { Body, Button, Field, SectionLabel } from '@/components/ui';
 import { mapsConfigured } from '@/lib/config';
 import { errorText, parseDay } from '@/lib/format';
-import { STATION_COLORS } from '@/lib/stationColors';
+import { STATION_COLORS, STATION_RADIUS_M } from '@/lib/stationColors';
 import { supabase } from '@/lib/supabase';
 import { radius, space, useColors } from '@/lib/theme';
 import { useRound } from '@/providers/RoundProvider';
 
-const RADII = [40, 60, 100, 150];
 
 export default function StationScreen() {
   const c = useColors();
@@ -30,7 +29,6 @@ export default function StationScreen() {
   const [address, setAddress] = useState(existing?.address ?? '');
   const [query, setQuery] = useState('');
   const [pin, setPin] = useState<{ latitude: number; longitude: number } | null>(existing ? { latitude: existing.lat, longitude: existing.lng } : null);
-  const [radiusM, setRadiusM] = useState(existing?.radius_m ?? 60);
   const [time, setTime] = useState<Date | null>(existing?.planned_at ? new Date(existing.planned_at) : null);
   const [note, setNote] = useState(existing?.note ?? '');
   // Farben anderer Stationen dieses Hops sind vergeben
@@ -109,7 +107,7 @@ export default function StationScreen() {
       d.setHours(time.getHours(), time.getMinutes(), 0, 0);
       plannedAt = d.toISOString();
     }
-    const row = { name: name.trim(), address: address.trim() || null, lat: pin.latitude, lng: pin.longitude, radius_m: radiusM, planned_at: plannedAt, note: note.trim() || null, color };
+    const row = { name: name.trim(), address: address.trim() || null, lat: pin.latitude, lng: pin.longitude, radius_m: STATION_RADIUS_M, planned_at: plannedAt, note: note.trim() || null, color };
     setBusy('speichern');
     const { error } = existing
       ? await supabase.from('stations').update(row).eq('id', existing.id)
@@ -147,12 +145,12 @@ export default function StationScreen() {
             <MapView ref={map} provider={PROVIDER_GOOGLE} style={{ flex: 1 }} initialRegion={start} toolbarEnabled={false}
               onLongPress={(e) => place(e.nativeEvent.coordinate)} onPoiClick={(e) => { place(e.nativeEvent.coordinate); if (!name.trim()) setName(e.nativeEvent.name.split('\n')[0]); }}>
               {pin && <Marker coordinate={pin} draggable onDragEnd={(e) => place(e.nativeEvent.coordinate)} pinColor={c.accent} />}
-              {pin && <Circle center={pin} radius={radiusM} strokeColor={c.accent} strokeWidth={1.5} fillColor="rgba(255,90,54,0.16)" />}
+              {pin && <Circle center={pin} radius={STATION_RADIUS_M} strokeColor={c.accent} strokeWidth={1.5} fillColor="rgba(255,90,54,0.16)" />}
             </MapView>
           </View>
           )}
           {pin && <Body muted small>Punkt gesetzt: {pin.latitude.toFixed(5)}, {pin.longitude.toFixed(5)}</Body>}
-          <Body muted small>Lange auf die Karte tippen setzt den Punkt. Du kannst die Nadel auch verschieben oder einen Ort auf der Karte antippen.</Body>
+          <Body muted small>Lange auf die Karte tippen setzt den Punkt. Du kannst die Nadel auch verschieben oder einen Ort auf der Karte antippen. Wer im Umkreis von 60 m ankommt, wird automatisch eingecheckt.</Body>
           <Button small variant="soft" icon="locate" title="Meinen Standort nehmen" onPress={here} loading={busy === 'hier'} style={{ alignSelf: 'flex-start' }} />
         </View>
 
@@ -180,14 +178,6 @@ export default function StationScreen() {
             {color ? `${STATION_COLORS.find((x) => x.hex.toUpperCase() === color.toUpperCase())?.name ?? 'Eigene Farbe'}: ` : ''}
             In dieser Farbe leuchtet die Station auf der Karte. Durchgestrichene Farben haben schon andere Stationen.
           </Text>
-        </View>
-
-        <View>
-          <SectionLabel>Check-in-Radius</SectionLabel>
-          <View style={{ flexDirection: 'row', gap: space.s, flexWrap: 'wrap' }}>
-            {RADII.map((r) => <Chip key={r} label={`${r} m`} active={radiusM === r} onPress={() => setRadiusM(r)} />)}
-          </View>
-          <Body muted small style={{ marginTop: space.s }}>Wer im Kreis ankommt, wird automatisch eingecheckt. In engen Straßen eher klein, bei Parks und Plätzen größer.</Body>
         </View>
 
         <DateField label="Geplante Uhrzeit (optional)" mode="time" value={time} onChange={setTime} placeholder="Keine Uhrzeit" clearable />

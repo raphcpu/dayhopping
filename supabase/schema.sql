@@ -843,3 +843,7 @@ grant insert on public.client_errors to anon, authenticated;
 
 alter table public.stations add column if not exists color text check (color ~ '^#[0-9A-Fa-f]{6}$');
 create unique index if not exists stations_color_unique on public.stations (round_id, upper(color)) where color is not null;
+
+-- Einheitlicher Check-in-Radius: alle Stationen 60 m (die App bietet keine Auswahl mehr)
+alter table public.stations alter column radius_m set default 60;
+update public.stations set radius_m = 60 where radius_m <> 60;

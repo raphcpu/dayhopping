@@ -1,3 +1,6 @@
+// Einheitlicher Check-in-Radius aller Stationen in Metern
+export const STATION_RADIUS_M = 60;
+
 // Leuchtfarben für Stationen. Innerhalb eines Hops ist jede Farbe nur einmal vergeben.
 export const STATION_COLORS: { hex: string; name: string }[] = [
   { hex: '#FF3B30', name: 'Rot' },
