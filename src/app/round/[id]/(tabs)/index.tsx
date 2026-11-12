@@ -170,10 +170,8 @@ export default function MapTab() {
       ? { icon: 'eye-off' as const, text: 'Standort pausiert', bg: c.card, fg: c.muted }
       : tracking === 'hintergrund' && battery.optimized
         ? { icon: 'battery-dead' as const, text: 'Akku-Sparen bremst Ortung', bg: c.card, fg: c.danger }
-      : tracking === 'hintergrund'
-        ? { icon: 'navigate' as const, text: 'Standort wird geteilt', bg: c.card, fg: c.teal }
-        : tracking === 'vordergrund' && Platform.OS === 'web'
-          ? { icon: 'navigate' as const, text: 'Standort wird geteilt', bg: c.card, fg: c.teal }
+      : tracking === 'hintergrund' || (tracking === 'vordergrund' && Platform.OS === 'web')
+        ? { icon: 'navigate' as const, text: 'Live', bg: c.card, fg: LIVE_GREEN, live: true }
         : tracking === 'vordergrund'
           ? { icon: 'warning' as const, text: 'Nur bei geöffneter App', bg: c.card, fg: c.danger }
           : { icon: 'navigate-outline' as const, text: 'Standort freigeben', bg: c.accent, fg: c.onAccent };
@@ -262,9 +260,13 @@ export default function MapTab() {
         )}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }} pointerEvents="box-none">
           <Pressable onPress={() => setTrackingOpen(true)} accessibilityRole="button"
-            style={{ backgroundColor: chip.bg, borderRadius: radius.pill, minHeight: 42, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8, ...softShadow(c, 2) }}>
-            <Ionicons name={chip.icon} size={17} color={chip.fg} />
-            <Text style={{ color: chip.fg, fontWeight: '700', fontSize: 14 }}>{chip.text}</Text>
+            accessibilityLabel={'live' in chip ? 'Standort wird live geteilt' : chip.text}
+            style={{ backgroundColor: chip.bg, borderRadius: radius.pill, minHeight: 42, paddingHorizontal: 'live' in chip ? 14 : 16, flexDirection: 'row', alignItems: 'center', gap: 8, ...softShadow(c, 2) }}>
+            {'live' in chip ? (
+              // Kurz und knapp: grüner Punkt + „Live“
+              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: LIVE_GREEN, borderWidth: 2, borderColor: withAlpha(LIVE_GREEN, 0.35) }} />
+            ) : <Ionicons name={chip.icon} size={17} color={chip.fg} />}
+            <Text style={{ color: chip.fg, fontWeight: '800', fontSize: 14, letterSpacing: 'live' in chip ? 0.3 : 0 }}>{chip.text}</Text>
           </Pressable>
           <View style={{ gap: space.s }}>
             <View style={{ borderRadius: 24, ...softShadow(c, 2) }}>

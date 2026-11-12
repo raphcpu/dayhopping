@@ -3,13 +3,16 @@
 // Unterstützt genau das, was DayHop nutzt: MapView (mit animateToRegion/fitToCoordinates),
 // Marker mit eigenem Inhalt und Anker, Circle, Polyline.
 import {
-  AdvancedMarker, APIProvider, Circle as GCircle, Map, type MapMouseEvent, Pin, Polyline as GPolyline, useMap,
+  APIProvider, Circle as GCircle, Map, type MapMouseEvent, Marker as GMarker, Polyline as GPolyline, useMap,
 } from '@vis.gl/react-google-maps';
-import { forwardRef, type ReactNode, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, type ReactNode, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 
 const KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_WEB_KEY ?? '';
-const MAP_ID = process.env.EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID';
+// Ohne Map-ID zeichnet Google die klassische Karte – dieselbe Optik wie in der Android-App.
+// Eigene Marker liegen deshalb als OverlayView darüber (AdvancedMarker bräuchte eine Map-ID).
+const MAP_ID = process.env.EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID || undefined;
 
 export const PROVIDER_GOOGLE = 'google';
 
@@ -94,7 +97,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
   return (
     <View style={style}>
       <APIProvider apiKey={KEY} language="de" region="DE">
-        <Map style={{ width: '100%', height: '100%' }} defaultCenter={center} defaultZoom={zoom} mapId={MAP_ID}
+        <Map style={{ width: '100%', height: '100%' }} defaultCenter={center} defaultZoom={zoom} mapId={MAP_ID} renderingType="RASTER"
           gestureHandling="greedy" disableDefaultUI clickableIcons={!!onPoiClick} onClick={onClick} onTilesLoaded={() => onMapLoaded?.()}>
           <Bridge handle={ref} onReady={onMapReady} />
           {children}
@@ -116,18 +119,75 @@ type MarkerProps = {
   children?: ReactNode;
 };
 
+/** Klassische Stecknadel in Wunschfarbe (für Marker ohne eigenen Inhalt) */
+function pinIcon(color = '#EA4335'): google.maps.Icon {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40"><path d="M14 1C7 1 1.5 6.4 1.5 13.3c0 9.2 12.5 25.2 12.5 25.2s12.5-16 12.5-25.2C26.5 6.4 21 1 14 1z" fill="${color}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13.5" r="4.8" fill="#fff"/></svg>`;
+  return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, scaledSize: new google.maps.Size(28, 40), anchor: new google.maps.Point(14, 39) };
+}
+
+function place(div: HTMLDivElement, p: google.maps.Point | null | undefined) {
+  if (!p) return;
+  div.style.left = `${p.x}px`;
+  div.style.top = `${p.y}px`;
+}
+
+function configure(div: HTMLDivElement, ax: number, ay: number, zIndex: number | undefined, onPress: (() => void) | undefined) {
+  div.style.transform = `translate(${-ax * 100}%, ${-ay * 100}%)`;
+  div.style.zIndex = String(zIndex ?? 0);
+  div.style.cursor = onPress ? 'pointer' : 'default';
+  div.onclick = onPress ? (e) => {
+    e.stopPropagation();
+    onPress();
+  } : null;
+}
+
+/** Eigener Marker-Inhalt als HTML über der Karte, positioniert per OverlayView. */
+function OverlayMarker({ coordinate, anchor, zIndex, onPress, children }: {
+  coordinate: LatLng; anchor: { x: number; y: number }; zIndex?: number; onPress?: () => void; children: ReactNode;
+}) {
+  const map = useMap();
+  const [div] = useState(() => {
+    const d = document.createElement('div');
+    d.style.position = 'absolute';
+    d.style.width = 'max-content';
+    return d;
+  });
+  const overlay = useRef<google.maps.OverlayView | null>(null);
+  const pos = useRef(coordinate);
+
+  useEffect(() => {
+    if (!map) return;
+    const o = new google.maps.OverlayView();
+    o.onAdd = () => o.getPanes()?.overlayMouseTarget.appendChild(div);
+    o.draw = () => place(div, o.getProjection()?.fromLatLngToDivPixel(new google.maps.LatLng(pos.current.latitude, pos.current.longitude)));
+    o.onRemove = () => div.remove();
+    google.maps.OverlayView.preventMapHitsAndGesturesFrom(div);
+    o.setMap(map);
+    overlay.current = o;
+    return () => o.setMap(null);
+  }, [map, div]);
+
+  useEffect(() => {
+    pos.current = coordinate;
+    overlay.current?.draw();
+  }, [coordinate]);
+
+  useEffect(() => configure(div, anchor.x, anchor.y, zIndex, onPress), [div, anchor.x, anchor.y, zIndex, onPress]);
+
+  return createPortal(children, div);
+}
+
 export function Marker({ coordinate, anchor, zIndex, title, pinColor, draggable, onPress, onDragEnd, children }: MarkerProps) {
-  const a = anchor ?? (children ? { x: 0.5, y: 0.5 } : { x: 0.5, y: 1 });
+  if (children) {
+    return <OverlayMarker coordinate={coordinate} anchor={anchor ?? { x: 0.5, y: 0.5 }} zIndex={zIndex} onPress={onPress}>{children}</OverlayMarker>;
+  }
   return (
-    <AdvancedMarker position={toG(coordinate)} zIndex={zIndex} title={title} draggable={draggable}
-      anchorLeft={`${-a.x * 100}%`} anchorTop={`${-a.y * 100}%`}
+    <GMarker position={toG(coordinate)} zIndex={zIndex} title={title} draggable={draggable} icon={pinIcon(pinColor)}
       onClick={onPress ? () => onPress() : undefined}
       onDragEnd={(e) => {
         const ll = e.latLng;
         if (ll) onDragEnd?.({ nativeEvent: { coordinate: { latitude: ll.lat(), longitude: ll.lng() } } });
-      }}>
-      {children ?? <Pin background={pinColor} borderColor="#ffffff" glyphColor="#ffffff" />}
-    </AdvancedMarker>
+      }} />
   );
 }
 
