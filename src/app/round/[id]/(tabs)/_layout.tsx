@@ -3,8 +3,9 @@ import { useRouter } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Heading, IconButton, type IconName, StatusPill } from '@/components/ui';
-import { softShadow, space, useColors } from '@/lib/theme';
+import { IconButton, type IconName, StatusPill } from '@/components/ui';
+import { WaveText } from '@/components/WaveText';
+import { fonts, softShadow, space, useColors } from '@/lib/theme';
 import { useRound } from '@/providers/RoundProvider';
 
 function Header() {
@@ -17,7 +18,9 @@ function Header() {
     <View style={{ paddingTop: insets.top + 4, paddingBottom: 6, paddingHorizontal: space.xs, backgroundColor: c.bg, flexDirection: 'row', alignItems: 'center' }}>
       <IconButton icon="chevron-back" label="Zurück zu deinen Hops" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.s }}>
-        <Heading size={20} style={{ flexShrink: 1 }}>{round.name}</Heading>
+        <View style={{ flexShrink: 1 }}>
+          <WaveText text={round.name} every={12000} height={4} style={{ fontFamily: fonts.display, fontSize: 20, color: c.ink, letterSpacing: -0.4 }} />
+        </View>
         <StatusPill status={round.status} />
       </View>
       <IconButton icon={isOrganizer ? 'options' : 'information-circle-outline'} label={isOrganizer ? 'Organisation' : 'Hop-Info'}

@@ -5,10 +5,11 @@ import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateField } from '@/components/DateField';
 import { Avatar, Body, Button, Card, EmptyState, Field, Heading, Sheet, StatusPill } from '@/components/ui';
+import { WaveText } from '@/components/WaveText';
 import { errorText, formatDay, toDay } from '@/lib/format';
 import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
-import { space, useColors } from '@/lib/theme';
+import { fonts, space, useColors } from '@/lib/theme';
 import type { Round } from '@/lib/types';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -91,7 +92,7 @@ export default function Home() {
       <View style={{ paddingTop: insets.top + space.l, paddingHorizontal: space.xl, paddingBottom: space.m, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flex: 1 }}>
           <Body muted>Hallo {profile?.display_name ?? ''}</Body>
-          <Heading size={32}>Deine Hops</Heading>
+          <WaveText text="Deine Hops" style={{ fontFamily: fonts.display, fontSize: 32, color: c.ink, letterSpacing: -0.5 }} />
         </View>
         <Pressable onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel="Profil" hitSlop={8}>
           {profile ? <Avatar profile={profile} size={46} /> : <Ionicons name="person-circle" size={46} color={c.muted} />}

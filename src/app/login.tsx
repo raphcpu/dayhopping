@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Body, Button, Field, Segmented } from '@/components/ui';
+import { WaveText } from '@/components/WaveText';
 import { errorText } from '@/lib/format';
 import { isConfigured } from '@/lib/supabase';
 import { BRAND, fonts, space, useColors } from '@/lib/theme';
@@ -48,7 +49,10 @@ export default function Login() {
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
         <View style={{ paddingTop: insets.top + 56, paddingHorizontal: space.xl, paddingBottom: 40 }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
-            <Text style={{ fontFamily: fonts.displayHeavy, fontSize: 56, color: '#fff', letterSpacing: -2.2, lineHeight: 58 }}>Day{'\n'}Hop</Text>
+            <View>
+              <WaveText text="Day" every={7000} height={9} style={{ fontFamily: fonts.displayHeavy, fontSize: 56, color: '#fff', letterSpacing: -2.2, lineHeight: 58 }} />
+              <WaveText text="Hop" every={7000} height={9} style={{ fontFamily: fonts.displayHeavy, fontSize: 56, color: '#fff', letterSpacing: -2.2, lineHeight: 58 }} />
+            </View>
             <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: BRAND, marginBottom: 14 }} />
           </View>
           <Text style={{ color: '#C9CEDA', fontSize: 18, marginTop: space.m, lineHeight: 25 }}>
