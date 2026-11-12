@@ -21,7 +21,17 @@ type Region = LatLng & { latitudeDelta: number; longitudeDelta: number };
 type Coord = { nativeEvent: { coordinate: LatLng } };
 
 const toG = (p: LatLng) => ({ lat: p.latitude, lng: p.longitude });
-const zoomFor = (delta: number) => Math.max(2, Math.min(20, Math.round(Math.log2(360 / Math.max(delta, 0.0001)))));
+/** Zoomstufe wie in der App: Breite des Ausschnitts (Grad) auf die Kartenbreite (Pixel) abbilden */
+const zoomFor = (r: { longitudeDelta: number }, widthPx = typeof window !== 'undefined' ? window.innerWidth : 390) =>
+  Math.max(2, Math.min(20, Math.log2((360 * widthPx) / 256 / Math.max(r.longitudeDelta, 0.0001))));
+
+// Wie die Android-App: Geschäfte und Werbe-POIs ausblenden, Karte ruhig halten
+const STYLES: google.maps.MapTypeStyle[] = [
+  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.attraction', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.place_of_worship', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit.station', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
+];
 
 /** "rgba(r,g,b,a)" oder "#rrggbb" → Farbe + Deckkraft (Google ignoriert Alpha in Farbwerten) */
 function color(c: string | undefined, fallback = '#000000'): { color: string; opacity: number } {
@@ -56,7 +66,7 @@ function Bridge({ handle, onReady }: { handle: React.Ref<MapViewHandle>; onReady
     animateToRegion: (r) => {
       if (!map) return;
       map.panTo(toG(r));
-      map.setZoom(zoomFor(r.latitudeDelta));
+      map.setZoom(zoomFor(r, map.getDiv().clientWidth || undefined));
     },
     fitToCoordinates: (coords, opts) => {
       if (!map || !coords.length) return;
@@ -78,7 +88,7 @@ function Bridge({ handle, onReady }: { handle: React.Ref<MapViewHandle>; onReady
 export const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(props, ref) {
   const { style, initialRegion, children, onMapReady, onMapLoaded, onPress, onLongPress, onPoiClick } = props;
   const center = initialRegion ? toG(initialRegion) : { lat: 51.1657, lng: 10.4515 };
-  const zoom = initialRegion ? zoomFor(initialRegion.latitudeDelta) : 6;
+  const zoom = initialRegion ? zoomFor(initialRegion) : 6;
 
   const onClick = (e: MapMouseEvent) => {
     const ll = e.detail.latLng;
@@ -97,7 +107,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
   return (
     <View style={style}>
       <APIProvider apiKey={KEY} language="de" region="DE">
-        <Map style={{ width: '100%', height: '100%' }} defaultCenter={center} defaultZoom={zoom} mapId={MAP_ID} renderingType="RASTER"
+        <Map style={{ width: '100%', height: '100%' }} defaultCenter={center} defaultZoom={zoom} mapId={MAP_ID} renderingType="RASTER" styles={MAP_ID ? undefined : STYLES}
           gestureHandling="greedy" disableDefaultUI clickableIcons={!!onPoiClick} onClick={onClick} onTilesLoaded={() => onMapLoaded?.()}>
           <Bridge handle={ref} onReady={onMapReady} />
           {children}
