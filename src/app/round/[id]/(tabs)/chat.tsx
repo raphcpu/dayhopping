@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { showMenu } from '@/components/Menu';
+import { showProfile } from '@/components/ProfileSheet';
 import { Avatar, Body, EmptyState } from '@/components/ui';
 import { errorText, formatTime } from '@/lib/format';
 import { confirmBlock, reportContent } from '@/lib/moderation';
@@ -97,7 +98,11 @@ export default function ChatTab() {
     const startsGroup = !above || above.kind !== 'chat' || above.user_id !== m.user_id;
     return (
       <View style={{ flexDirection: 'row', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 8, marginTop: startsGroup ? 10 : 2 }}>
-        {!mine && (startsGroup ? <Avatar profile={p} size={30} /> : <View style={{ width: 30 }} />)}
+        {!mine && (startsGroup && m.user_id ? (
+          <Pressable onPress={() => showProfile(m.user_id!)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`Profil von ${p.display_name}`}>
+            <Avatar profile={p} size={30} />
+          </Pressable>
+        ) : <View style={{ width: 30 }} />)}
         <Pressable onLongPress={() => onLongPress(m)} delayLongPress={350}
           style={{ maxWidth: '78%', backgroundColor: mine ? c.bubbleMine : c.bubbleOther, borderRadius: 20, borderBottomRightRadius: mine ? 6 : 20, borderBottomLeftRadius: mine ? 20 : 6,
             paddingHorizontal: 14, paddingVertical: 9 }}>

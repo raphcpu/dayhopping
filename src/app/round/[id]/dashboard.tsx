@@ -6,6 +6,7 @@ import { Alert, Platform, ScrollView, Share, Switch, Text, View } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateField } from '@/components/DateField';
 import { showMenu } from '@/components/Menu';
+import { showProfile } from '@/components/ProfileSheet';
 import { TrackingSheet } from '@/components/TrackingSheet';
 import { Avatar, Body, Button, Card, Divider, Field, Heading, IconButton, ListRow, SectionLabel, Sheet, StatusPill } from '@/components/ui';
 import { shareCostsCsv, sharePdf, shareVisitsCsv } from '@/lib/export';
@@ -96,14 +97,17 @@ export default function Dashboard() {
   };
 
   const memberMenu = (m: Member) => {
-    if (!isOrganizer || m.user_id === userId) return;
-    Alert.alert(m.profile.display_name, undefined, [
-      m.role === 'organizer'
-        ? { text: 'Organisator-Rolle entziehen', onPress: () => run('rolle', () => supabase.rpc('set_member_role', { p_round: round.id, p_user: m.user_id, p_role: 'member' })) }
-        : { text: 'Zum Organisator machen', onPress: () => run('rolle', () => supabase.rpc('set_member_role', { p_round: round.id, p_user: m.user_id, p_role: 'organizer' })) },
-      { text: 'Aus dem Hop entfernen', style: 'destructive', onPress: () => run('entfernen', () => supabase.rpc('remove_member', { p_round: round.id, p_user: m.user_id })) },
-      { text: 'Abbrechen', style: 'cancel' },
-    ]);
+    if (!isOrganizer || m.user_id === userId) return showProfile(m.user_id);
+    showMenu({
+      title: m.profile.display_name,
+      options: [
+        { text: 'Profil ansehen', icon: 'person-circle-outline', onPress: () => showProfile(m.user_id) },
+        m.role === 'organizer'
+          ? { text: 'Organisator-Rolle entziehen', icon: 'star-outline', onPress: () => run('rolle', () => supabase.rpc('set_member_role', { p_round: round.id, p_user: m.user_id, p_role: 'member' })) }
+          : { text: 'Zum Organisator machen', icon: 'star', onPress: () => run('rolle', () => supabase.rpc('set_member_role', { p_round: round.id, p_user: m.user_id, p_role: 'organizer' })) },
+        { text: 'Aus dem Hop entfernen', icon: 'person-remove-outline', destructive: true, onPress: () => run('entfernen', () => supabase.rpc('remove_member', { p_round: round.id, p_user: m.user_id })) },
+      ],
+    });
   };
 
   const openReports = isOrganizer ? reports.filter((r) => !r.resolved_at) : [];
@@ -294,7 +298,7 @@ export default function Dashboard() {
               <View key={m.user_id}>
                 {i > 0 && <Divider />}
                 <ListRow
-                  onPress={isOrganizer && m.user_id !== userId ? () => memberMenu(m) : undefined}
+                  onPress={() => memberMenu(m)}
                   left={<Avatar profile={m.profile} size={40} ring={st?.currentStationId ? c.teal : undefined} />}
                   title={m.user_id === userId ? `${m.profile.display_name} (du)` : m.profile.display_name}
                   subtitle={where}

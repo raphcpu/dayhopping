@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Dimensions, FlatList, Image, Linking, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, Text, View } from 'react-native';
 import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { MapMissing } from '@/components/MapMissing';
+import { showProfile } from '@/components/ProfileSheet';
 import { StationGlow } from '@/components/StationGlow';
 import { TrackingSheet } from '@/components/TrackingSheet';
 import { Avatar, AvatarStack, Body, Button, Card, Heading, IconButton } from '@/components/ui';
@@ -11,7 +12,7 @@ import { useBatteryOptimized } from '@/lib/battery';
 import { mapsConfigured } from '@/lib/config';
 import { glowLevel, stationColor, withAlpha } from '@/lib/stationColors';
 import { storage } from '@/lib/storage';
-import { errorText, formatAgo, formatTime, initials } from '@/lib/format';
+import { errorText, formatTime, initials } from '@/lib/format';
 import { stationStats } from '@/lib/stats';
 import { avatarUrl, supabase } from '@/lib/supabase';
 import { radius, space, useColors } from '@/lib/theme';
@@ -239,7 +240,7 @@ export default function MapTab() {
           return (
             <PersonMarkerOnMap key={`${l.user_id}-${stale}-${p.display_name}-${p.color}-${p.avatar_path}`} profile={p} lat={l.lat} lng={l.lng}
               mine={l.user_id === userId} stale={stale}
-              onPress={() => Alert.alert(p.display_name, `Standort ${formatAgo(l.recorded_at, now)}`)} />
+              onPress={() => showProfile(l.user_id, { onShowOnMap: () => focusPerson(l.user_id) })} />
           );
         })}
       </MapView>
@@ -286,7 +287,8 @@ export default function MapTab() {
           {members.map((m) => {
             const l = locations.find((x) => x.user_id === m.user_id);
             return (
-              <Pressable key={m.user_id} onPress={() => focusPerson(m.user_id)} accessibilityRole="button" accessibilityLabel={`${m.profile.display_name} auf der Karte zeigen`}
+              <Pressable key={m.user_id} onPress={() => showProfile(m.user_id, { onShowOnMap: () => focusPerson(m.user_id) })}
+                onLongPress={() => focusPerson(m.user_id)} accessibilityRole="button" accessibilityLabel={`Profil von ${m.profile.display_name}`}
                 style={{ padding: 3, borderRadius: 26, backgroundColor: c.card, elevation: 2, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } }}>
                 <Avatar profile={m.profile} size={40} dimmed={!l || now - new Date(l.recorded_at).getTime() > STALE_MS} />
               </Pressable>
