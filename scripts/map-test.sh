@@ -10,16 +10,20 @@ adb install -r "$APK" || { echo "KARTE: INSTALLATION FEHLGESCHLAGEN"; exit 0; }
 adb logcat -c
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
 sleep 15
+# Tastatur nach jeder Eingabe schließen, sonst verdeckt sie das nächste Feld
 $UI tap "du@beispiel.de" && adb shell input text "$TEST_EMAIL"
+adb shell input keyevent 111; sleep 1
 $UI tap "Mindestens 6 Zeichen" && adb shell input text "$TEST_PASSWORD"
-adb shell input keyevent 111   # Tastatur schließen
-sleep 1
+adb shell input keyevent 111; sleep 1
 $UI tap "^Anmelden$" --last
 sleep 8
 $UI tap "(?i)^(allow|zulassen|erlauben)$" || true   # Benachrichtigungen
 sleep 2
 $UI tap "Kartentest" --last
 sleep 25
+# Einmal einchecken, damit das Leuchten der Station zu sehen ist
+$UI tap "Einchecken" || true
+sleep 8
 echo "----- Bildschirmtexte -----"; $UI dump | head -40
 adb exec-out screencap -p > smoke/karte.png
 adb logcat -d -v brief > smoke/karte-logcat.txt
