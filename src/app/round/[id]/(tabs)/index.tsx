@@ -309,13 +309,35 @@ export default function MapTab() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Heading size={18} style={{ lineHeight: 22 }}>{s.name}</Heading>
-                      <Body muted small numberOfLines={1}>
-                        {[s.planned_at ? `${formatTime(s.planned_at)} Uhr` : null, s.address].filter(Boolean).join(' · ') || `Station ${index + 1} von ${stations.length}`}
+                      <Body muted small>
+                        {s.planned_at ? `${formatTime(s.planned_at)} Uhr · Station ${index + 1} von ${stations.length}` : `Station ${index + 1} von ${stations.length}`}
                       </Body>
                     </View>
                     {isOrganizer && <IconButton icon="create-outline" label="Station bearbeiten" onPress={() => router.push(`/round/${round.id}/station?stationId=${s.id}`)} />}
                     <IconButton icon="close" label="Stationsinfo schließen" onPress={() => setCardOpen(false)} />
                   </View>
+                  {(s.address || s.floor || s.bell) && (
+                    <View style={{ gap: 4 }}>
+                      {s.address && (
+                        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
+                          <Ionicons name="location-outline" size={17} color={c.muted} style={{ marginTop: 1 }} />
+                          <Body small selectable style={{ flex: 1 }}>{s.address}</Body>
+                        </View>
+                      )}
+                      {s.floor && (
+                        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                          <Ionicons name="layers-outline" size={17} color={c.muted} />
+                          <Body small style={{ flex: 1 }}>Etage: {s.floor}</Body>
+                        </View>
+                      )}
+                      {s.bell && (
+                        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                          <Ionicons name="notifications-outline" size={17} color={c.muted} />
+                          <Body small style={{ flex: 1 }}>Klingel: {s.bell}</Body>
+                        </View>
+                      )}
+                    </View>
+                  )}
                   {myVisited.has(s.id) && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Ionicons name="checkmark-circle" size={18} color="#22C55E" />

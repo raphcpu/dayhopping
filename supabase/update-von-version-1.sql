@@ -265,3 +265,7 @@ begin
   return v_count;
 end;
 $$;
+
+-- Etage und Name auf der Klingel je Station
+alter table public.stations add column if not exists floor text check (char_length(floor) <= 40);
+alter table public.stations add column if not exists bell text check (char_length(bell) <= 60);

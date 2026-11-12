@@ -848,3 +848,7 @@ create unique index if not exists stations_color_unique on public.stations (roun
 -- Einheitlicher Check-in-Radius: alle Stationen 60 m (die App bietet keine Auswahl mehr)
 alter table public.stations alter column radius_m set default 60;
 update public.stations set radius_m = 60 where radius_m <> 60;
+
+-- Etage und Name auf der Klingel je Station
+alter table public.stations add column if not exists floor text check (char_length(floor) <= 40);
+alter table public.stations add column if not exists bell text check (char_length(bell) <= 60);

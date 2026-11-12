@@ -18,12 +18,12 @@ export function Heading({ children, size = 26, style }: { children: ReactNode; s
   return <Text style={[{ fontFamily: fonts.display, fontSize: size, color: c.ink, letterSpacing: -0.5 }, style]}>{children}</Text>;
 }
 
-export function Body({ children, muted, small, bold, style, numberOfLines }: {
-  children: ReactNode; muted?: boolean; small?: boolean; bold?: boolean; style?: StyleProp<TextStyle>; numberOfLines?: number;
+export function Body({ children, muted, small, bold, style, numberOfLines, selectable }: {
+  children: ReactNode; muted?: boolean; small?: boolean; bold?: boolean; style?: StyleProp<TextStyle>; numberOfLines?: number; selectable?: boolean;
 }) {
   const c = useColors();
   return (
-    <Text numberOfLines={numberOfLines}
+    <Text numberOfLines={numberOfLines} selectable={selectable}
       style={[{ fontSize: small ? 13 : 16, lineHeight: small ? 18 : 22, color: muted ? c.muted : c.ink, fontWeight: bold ? '600' : '400' }, style]}>
       {children}
     </Text>

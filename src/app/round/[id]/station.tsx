@@ -27,6 +27,8 @@ export default function StationScreen() {
 
   const [name, setName] = useState(existing?.name ?? '');
   const [address, setAddress] = useState(existing?.address ?? '');
+  const [floor, setFloor] = useState(existing?.floor ?? '');
+  const [bell, setBell] = useState(existing?.bell ?? '');
   const [query, setQuery] = useState('');
   const [pin, setPin] = useState<{ latitude: number; longitude: number } | null>(existing ? { latitude: existing.lat, longitude: existing.lng } : null);
   const [time, setTime] = useState<Date | null>(existing?.planned_at ? new Date(existing.planned_at) : null);
@@ -110,7 +112,7 @@ export default function StationScreen() {
       d.setHours(time.getHours(), time.getMinutes(), 0, 0);
       plannedAt = d.toISOString();
     }
-    const row = { name: name.trim(), address: address.trim() || null, lat: pin.latitude, lng: pin.longitude, radius_m: STATION_RADIUS_M, planned_at: plannedAt, note: note.trim() || null, color };
+    const row = { name: name.trim(), address: address.trim() || null, floor: floor.trim() || null, bell: bell.trim() || null, lat: pin.latitude, lng: pin.longitude, radius_m: STATION_RADIUS_M, planned_at: plannedAt, note: note.trim() || null, color };
     setBusy('speichern');
     const { data: saved, error } = existing
       ? await supabase.from('stations').update(row).eq('id', existing.id).select('id').single()
@@ -172,6 +174,14 @@ export default function StationScreen() {
         </View>
 
         <Field label="Adresse (optional)" value={address} onChangeText={setAddress} placeholder="Wird beim Setzen des Punkts ausgefüllt" maxLength={160} />
+        <View style={{ flexDirection: 'row', gap: space.m }}>
+          <View style={{ flex: 1 }}>
+            <Field label="Etage (optional)" value={floor} onChangeText={setFloor} placeholder="z. B. 3. OG links" maxLength={40} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Field label="Klingel (optional)" value={bell} onChangeText={setBell} placeholder="Name an der Klingel" maxLength={60} />
+          </View>
+        </View>
 
         <View>
           <SectionLabel>Stationsnummer</SectionLabel>
