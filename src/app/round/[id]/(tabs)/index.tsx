@@ -6,6 +6,7 @@ import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native
 import { MapMissing } from '@/components/MapMissing';
 import { showProfile } from '@/components/ProfileSheet';
 import { StationGlow } from '@/components/StationGlow';
+import { StationMarker } from '@/components/StationMarker';
 import { TrackingSheet } from '@/components/TrackingSheet';
 import { AvatarStack, Body, Button, Card, Heading, IconButton } from '@/components/ui';
 import { useBatteryOptimized } from '@/lib/battery';
@@ -85,6 +86,7 @@ export default function MapTab() {
   }, []);
 
   const stats = useMemo(() => stationStats(stations, checkins, now), [stations, checkins, now]);
+  const checkedIn = useMemo(() => new Set(checkins.filter((ch) => !ch.left_at).map((ch) => ch.user_id)), [checkins]);
   const myOpen = checkins.find((ch) => ch.user_id === userId && !ch.left_at) ?? null;
   const myVisited = useMemo(() => new Set(checkins.filter((ch) => ch.user_id === userId).map((ch) => ch.station_id)), [checkins, userId]);
   const active = round?.status === 'aktiv';
@@ -212,39 +214,20 @@ export default function MapTab() {
             strokeColor={stationColor(sel, selected)} strokeWidth={2} fillColor={withAlpha(stationColor(sel, selected), 0.08)} />
         )}
         {stations.map((s, i) => {
-          const here = myOpen?.station_id === s.id;
-          const done = myVisited.has(s.id);
-          const on = i === selected;
-          const present = stats[i]?.present.length ?? 0;
+          const present = stats[i]?.present ?? [];
           const col = stationColor(s, i);
-          // Größer, je mehr Leute eingecheckt sind
-          const size = glowLevel(present).markerSize + (on ? 6 : 0);
+          const on = i === selected;
+          const profiles = present.map(profileOf);
+          // Neu zeichnen, wenn sich Personen, Auswahl, Haken oder Farbe ändern
+          const key = `${s.id}-${i}-${on}-${myVisited.has(s.id)}-${col}-${profiles.map((p) => `${p.id}:${p.avatar_path}`).join(',')}`;
           return (
-            <Marker key={`${s.id}-${i}-${here}-${done}-${on}-${present}-${col}`} coordinate={{ latitude: s.lat, longitude: s.lng }} anchor={{ x: 0.5, y: 0.5 }}
-              tracksViewChanges={false} zIndex={on ? 32 : 30} onPress={() => { focusStation(i, false); setCardOpen(true); }}>
-              <View style={{ width: size + 8, height: size + 8, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: col, borderWidth: 3, borderColor: '#fff',
-                  alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: Math.round(size * 0.42), textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 2 }}>{i + 1}</Text>
-                </View>
-                {done && (
-                  // Haken: Hier warst du schon
-                  <View style={{ position: 'absolute', bottom: 0, left: 0, width: 22, height: 22, borderRadius: 11, backgroundColor: '#22C55E',
-                    borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="checkmark" size={13} color="#fff" />
-                  </View>
-                )}
-                {present > 0 && (
-                  <View style={{ position: 'absolute', top: 0, right: 0, minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 5, backgroundColor: '#1E1B16',
-                    borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>{present}</Text>
-                  </View>
-                )}
-              </View>
-            </Marker>
+            <StationMarker key={key} lat={s.lat} lng={s.lng} number={i + 1} color={col}
+              size={glowLevel(present.length).markerSize + (on ? 6 : 0)} visited={myVisited.has(s.id)} selected={on} present={profiles}
+              onPress={() => { focusStation(i, false); setCardOpen(true); }} />
           );
         })}
-        {locations.map((l) => {
+        {locations.filter((l) => !checkedIn.has(l.user_id)).map((l) => {
+          // Eingecheckte erscheinen als Blütenblätter an ihrer Station, nicht zusätzlich auf ihrem GPS-Punkt
           const p = profileOf(l.user_id);
           const stale = now - new Date(l.recorded_at).getTime() > STALE_MS;
           // Der Schlüssel erzwingt ein Neuzeichnen, wenn sich das Aussehen ändert (Marker werden sonst nur einmal gerendert)
