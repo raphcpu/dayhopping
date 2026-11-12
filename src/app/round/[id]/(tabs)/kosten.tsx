@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
-import { Avatar, Body, Button, Card, Divider, EmptyState, ListRow, SectionLabel, Sheet } from '@/components/ui';
+import { Avatar, Body, Button, Card, Chip, Divider, EmptyState, ListRow, SectionLabel, Sheet } from '@/components/ui';
 import { shareCostsCsv, sharePdf } from '@/lib/export';
 import { errorText, formatTime } from '@/lib/format';
 import { computeBalances, formatEuro, settleUp, type Transfer } from '@/lib/money';
@@ -18,12 +18,25 @@ export default function CostsTab() {
   const { round, members, stations, checkins, expenses, settlements, isOrganizer, profileOf } = useRound();
   const [exportOpen, setExportOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [filter, setFilter] = useState<string | null>(null); // Station oder null = alle
 
   const balances = useMemo(() => computeBalances(expenses, settlements, members.map((m) => m.user_id)), [expenses, settlements, members]);
   const transfers = useMemo(() => settleUp(balances), [balances]);
   const total = expenses.reduce((s, e) => s + e.amount_cents, 0);
   const mine = (userId && balances.get(userId)) || 0;
   const stationName = useMemo(() => new Map(stations.map((s) => [s.id, s.name])), [stations]);
+
+  // Bilanz wie bei Tricount: bezahlt, eigener Anteil, Saldo je Person
+  const bilanz = useMemo(() => members.map((m) => {
+    const paid = expenses.filter((e) => e.payer_id === m.user_id).reduce((s, e) => s + e.amount_cents, 0);
+    const share = expenses.reduce((s, e) => s + (e.shares.find((x) => x.user_id === m.user_id)?.share_cents ?? 0), 0);
+    return { member: m, paid, share, balance: balances.get(m.user_id) ?? 0 };
+  }).sort((a, b) => b.balance - a.balance), [members, expenses, balances]);
+  const maxAbs = Math.max(1, ...bilanz.map((b) => Math.abs(b.balance)));
+
+  const usedStations = useMemo(() => stations.filter((s) => expenses.some((e) => e.station_id === s.id)), [stations, expenses]);
+  const shown = filter === null ? expenses : filter === 'ohne' ? expenses.filter((e) => !e.station_id) : expenses.filter((e) => e.station_id === filter);
+  const shownTotal = shown.reduce((s, e) => s + e.amount_cents, 0);
 
   if (!round || !userId) return null;
 
@@ -108,13 +121,58 @@ export default function CostsTab() {
           </View>
         )}
 
+        {expenses.length > 0 && (
+          <View>
+            <SectionLabel>Bilanz</SectionLabel>
+            <Card style={{ paddingVertical: space.s }}>
+              {bilanz.map((b, i) => (
+                <View key={b.member.user_id}>
+                  {i > 0 && <Divider />}
+                  <View style={{ paddingVertical: space.m, gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.m }}>
+                      <Avatar profile={b.member.profile} size={32} />
+                      <View style={{ flex: 1 }}>
+                        <Body bold numberOfLines={1}>{b.member.user_id === userId ? 'Du' : b.member.profile.display_name}</Body>
+                        <Body muted small>bezahlt {formatEuro(b.paid)} · Anteil {formatEuro(b.share)}</Body>
+                      </View>
+                      <Text style={{ fontSize: 16, fontWeight: '800', color: b.balance > 0 ? c.teal : b.balance < 0 ? c.danger : c.muted }}>
+                        {formatEuro(b.balance, true)}
+                      </Text>
+                    </View>
+                    {/* Balken: grün nach rechts = bekommt Geld, rot nach links = schuldet */}
+                    <View style={{ flexDirection: 'row', height: 6 }}>
+                      <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                        {b.balance < 0 && <View style={{ width: `${(Math.abs(b.balance) / maxAbs) * 100}%`, height: 6, borderRadius: 3, backgroundColor: c.danger }} />}
+                      </View>
+                      <View style={{ width: 2, backgroundColor: c.line }} />
+                      <View style={{ flex: 1 }}>
+                        {b.balance > 0 && <View style={{ width: `${(b.balance / maxAbs) * 100}%`, height: 6, borderRadius: 3, backgroundColor: c.teal }} />}
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </Card>
+          </View>
+        )}
+
         <View>
           <SectionLabel>Ausgaben</SectionLabel>
+          {expenses.length > 0 && (usedStations.length > 0) && (
+            <View style={{ gap: space.s, marginBottom: space.m }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.s }}>
+                <Chip label="Alle" active={filter === null} onPress={() => setFilter(null)} />
+                {usedStations.map((s) => <Chip key={s.id} icon="location" label={s.name} active={filter === s.id} onPress={() => setFilter(s.id)} />)}
+                {expenses.some((e) => !e.station_id) && <Chip label="Ohne Station" active={filter === 'ohne'} onPress={() => setFilter('ohne')} />}
+              </ScrollView>
+              {filter !== null && <Body muted small>{shown.length} {shown.length === 1 ? 'Ausgabe' : 'Ausgaben'} · zusammen {formatEuro(shownTotal)}</Body>}
+            </View>
+          )}
           {expenses.length === 0 ? (
             <EmptyState icon="wallet" title="Noch keine Ausgaben" text="Trag ein, wer was bezahlt hat. DayHop rechnet auf den Cent genau aus, wer wem wie viel schuldet." />
           ) : (
             <Card style={{ paddingVertical: space.s }}>
-              {expenses.map((e, i) => {
+              {shown.map((e, i) => {
                 const share = e.shares.find((s) => s.user_id === userId)?.share_cents ?? 0;
                 return (
                   <View key={e.id}>

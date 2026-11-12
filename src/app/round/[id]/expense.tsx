@@ -41,6 +41,33 @@ export default function ExpenseScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Wer war an einer Station eingecheckt (jemals bzw. gerade)?
+  const attendees = useMemo(() => {
+    const ever = new Map<string, Set<string>>();
+    const now = new Map<string, Set<string>>();
+    for (const ch of checkins) {
+      if (!ever.has(ch.station_id)) ever.set(ch.station_id, new Set());
+      ever.get(ch.station_id)!.add(ch.user_id);
+      if (!ch.left_at) {
+        if (!now.has(ch.station_id)) now.set(ch.station_id, new Set());
+        now.get(ch.station_id)!.add(ch.user_id);
+      }
+    }
+    return { ever, now };
+  }, [checkins]);
+  const memberIds = members.map((m) => m.user_id);
+  const selectOnly = (ids: Set<string> | string[]) => {
+    const set = new Set(ids);
+    setSelected(Object.fromEntries(memberIds.map((id) => [id, set.has(id)])));
+  };
+  const chooseStation = (id: string | null) => {
+    setStationId(id);
+    // Neue Ausgabe an einer Station: automatisch auf alle aufteilen, die dort eingecheckt waren
+    const there = id ? attendees.ever.get(id) : undefined;
+    if (!existing && there && there.size > 0) selectOnly([...there].filter((u) => memberIds.includes(u)));
+    if (!existing && !id) selectOnly(memberIds);
+  };
+
   const amount = parseEuro(amountText);
   const ids = useMemo(() => members.filter((m) => selected[m.user_id]).map((m) => m.user_id), [members, selected]);
   // Der Extra-Cent bei krummen Beträgen wandert von Ausgabe zu Ausgabe weiter
@@ -125,9 +152,9 @@ export default function ExpenseScreen() {
           <View>
             <SectionLabel>Station (optional)</SectionLabel>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.s }}>
-              <Chip label="Keine" active={stationId === null} onPress={canEdit ? () => setStationId(null) : undefined} />
+              <Chip label="Keine" active={stationId === null} onPress={canEdit ? () => chooseStation(null) : undefined} />
               {stations.map((s, i) => (
-                <Chip key={s.id} label={`${i + 1} · ${s.name}`} active={stationId === s.id} onPress={canEdit ? () => setStationId(s.id) : undefined} />
+                <Chip key={s.id} label={`${i + 1} · ${s.name}`} active={stationId === s.id} onPress={canEdit ? () => chooseStation(s.id) : undefined} />
               ))}
             </ScrollView>
           </View>
@@ -135,6 +162,23 @@ export default function ExpenseScreen() {
 
         <View style={{ gap: space.m }}>
           <SectionLabel style={{ marginBottom: 0 }}>Aufteilen</SectionLabel>
+          {canEdit && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.s }}>
+              <Chip label={`Alle (${memberIds.length})`} icon="people" active={ids.length === memberIds.length} onPress={() => selectOnly(memberIds)} />
+              {stations.filter((s) => (attendees.ever.get(s.id)?.size ?? 0) > 0).map((s) => {
+                const who = [...attendees.ever.get(s.id)!].filter((u) => memberIds.includes(u));
+                const on = who.length === ids.length && who.every((u) => selected[u]);
+                return <Chip key={s.id} icon="location" label={`Waren an ${s.name} (${who.length})`} active={on} onPress={() => selectOnly(who)} />;
+              })}
+              {stationId && (attendees.now.get(stationId)?.size ?? 0) > 0 && (
+                <Chip icon="radio-button-on" label={`Gerade dort (${attendees.now.get(stationId)!.size})`}
+                  onPress={() => selectOnly([...attendees.now.get(stationId)!])} />
+              )}
+            </ScrollView>
+          )}
+          {!existing && stationId && (attendees.ever.get(stationId)?.size ?? 0) > 0 && (
+            <Body muted small>Vorausgewählt: alle, die an dieser Station eingecheckt waren. Du kannst einzelne Personen an- oder abwählen.</Body>
+          )}
           {canEdit && (
             <Segmented value={mode} onChange={setMode}
               options={[{ value: 'gleich', label: 'Gleichmäßig' }, { value: 'anteile', label: 'Anteile' }, { value: 'betrag', label: 'Beträge' }]} />
