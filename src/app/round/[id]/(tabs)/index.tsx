@@ -13,9 +13,9 @@ import { useBatteryOptimized } from '@/lib/battery';
 import { mapsConfigured } from '@/lib/config';
 import { glowLevel, stationColor, withAlpha } from '@/lib/stationColors';
 import { storage } from '@/lib/storage';
-import { errorText, formatTime, initials } from '@/lib/format';
+import { formatTime, initials } from '@/lib/format';
 import { stationStats } from '@/lib/stats';
-import { avatarUrl, supabase } from '@/lib/supabase';
+import { avatarUrl } from '@/lib/supabase';
 import { radius, softShadow, space, useColors } from '@/lib/theme';
 import type { Profile } from '@/lib/types';
 import { useAuth } from '@/providers/AuthProvider';
@@ -71,7 +71,6 @@ export default function MapTab() {
   // Zeitpunkt der zuletzt geschlossenen Durchsage; bleibt über App-Neustarts erhalten
   const [dismissedUntil, setDismissedUntil] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const [busy, setBusy] = useState(false);
   const battery = useBatteryOptimized();
   // Wabern nur, solange die Karte sichtbar ist (spart Akku)
   const [visible, setVisible] = useState(false);
@@ -133,13 +132,6 @@ export default function MapTab() {
     if (index !== selected) focusStation(index, false);
   };
 
-  const checkin = async (stationId: string | null) => {
-    if (!round) return;
-    setBusy(true);
-    const { error } = await supabase.rpc('manual_checkin', { p_round: round.id, p_station: stationId });
-    setBusy(false);
-    if (error) Alert.alert('Das hat nicht geklappt', errorText(error));
-  };
 
   // Standort-Hinweis einmal von selbst zeigen, wenn der Hop läuft und die Berechtigung fehlt
   const prompted = useRef(false);
@@ -352,11 +344,8 @@ export default function MapTab() {
                     </Body>
                   </View>
                   <View style={{ flexDirection: 'row', gap: space.s }}>
-                    <Button small variant="soft" icon="walk" title="Route" style={{ flex: 1 }}
+                    <Button small variant="soft" icon="walk" title="Route dorthin" style={{ flex: 1 }}
                       onPress={() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=walking`)} />
-                    {active && (here
-                      ? <Button small variant="soft" icon="exit-outline" title="Auschecken" style={{ flex: 1 }} loading={busy} onPress={() => checkin(null)} />
-                      : <Button small icon="checkmark-circle" title="Einchecken" style={{ flex: 1 }} loading={busy} onPress={() => checkin(s.id)} />)}
                   </View>
                 </Card>
               );
