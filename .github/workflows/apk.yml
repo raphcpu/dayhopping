@@ -132,3 +132,34 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: ./scripts/smoke-test.sh
+
+  # Meldet sich mit einem Testkonto an und prüft, ob die Karte gezeichnet wird.
+  kartentest:
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
+      # Testkonto ohne Zugriff auf echte Hops (nur Mitglied des Test-Hops "Kartentest")
+      TEST_EMAIL: kartentest@dayhop.invalid
+      TEST_PASSWORD: r0dY8Xl36BdCp4in
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: DayHop-APK
+          path: android/app/build/outputs/apk/release
+      - name: KVM für den Emulator aktivieren
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Kartentest
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./scripts/map-test.sh
