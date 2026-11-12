@@ -238,16 +238,16 @@ export default function MapTab() {
       {/* Oben: Durchsage und Ortungsstatus */}
       <View pointerEvents="box-none" style={{ position: 'absolute', top: space.s, left: space.m, right: space.m, gap: space.s }}>
         {announcement && (
-          <View style={{ backgroundColor: c.card, borderRadius: radius.l, padding: space.l, flexDirection: 'row', gap: space.m, alignItems: 'flex-start', ...softShadow(c, 2) }}>
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="megaphone" size={19} color={c.onAccent} />
+          <View style={{ backgroundColor: '#FFD43B', borderRadius: radius.l, padding: space.l, flexDirection: 'row', gap: space.m, alignItems: 'flex-start', ...softShadow(c, 2) }}>
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#1E1B16', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="megaphone" size={19} color="#FFD43B" />
             </View>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: c.muted, fontWeight: '600', fontSize: 13 }}>Durchsage um {formatTime(announcement.created_at)}</Text>
-              <Text style={{ color: c.ink, fontSize: 16, lineHeight: 22, fontWeight: '500' }}>{announcement.body}</Text>
+              <Text style={{ color: '#5C4A00', fontWeight: '700', fontSize: 13 }}>Durchsage um {formatTime(announcement.created_at)}</Text>
+              <Text style={{ color: '#1E1B16', fontSize: 16, lineHeight: 22, fontWeight: '600' }}>{announcement.body}</Text>
             </View>
             <Pressable onPress={() => dismissAnnouncement(announcement.created_at)} hitSlop={12} accessibilityLabel="Durchsage ausblenden">
-              <Ionicons name="close" size={22} color={c.muted} />
+              <Ionicons name="close" size={22} color="#1E1B16" />
             </Pressable>
           </View>
         )}

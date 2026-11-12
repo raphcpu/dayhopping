@@ -1,6 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Body, Button, Field, Segmented } from '@/components/ui';
 import { WaveText } from '@/components/WaveText';
@@ -45,7 +46,7 @@ export default function Login() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: '#151821' }}>
+    <KeyboardAvoidingView behavior="padding" automaticOffset style={{ flex: 1, backgroundColor: '#151821' }}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
         <View style={{ paddingTop: insets.top + 56, paddingHorizontal: space.xl, paddingBottom: 40 }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>

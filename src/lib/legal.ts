@@ -32,7 +32,7 @@ export function privacySections(): LegalSection[] {
       paragraphs: [
         'Konto: deine E-Mail-Adresse, dein Passwort (nur als nicht umkehrbarer Hash), dein Anzeigename, deine Farbe und, wenn du eines hochlädst, dein Profilbild.',
         'Hops: in welchen Hops du Mitglied bist, deine Rolle, die Stationen und deine Einstellungen (Standort teilen, Chat stumm).',
-        'Standort: deine jeweils letzte Position mit Genauigkeit, Richtung, Geschwindigkeit und Zeitpunkt. Das geschieht nur, solange ein Hop läuft, in dem du das Teilen eingeschaltet hast – dann auch, wenn die App geschlossen ist oder nicht verwendet wird. Ein Bewegungsverlauf wird nicht gespeichert.',
+        'Standort: deine jeweils letzte Position mit Genauigkeit, Richtung, Geschwindigkeit und Zeitpunkt. Das geschieht, solange du Mitglied eines Hops bist und dort das Teilen eingeschaltet hast – auch, wenn die App geschlossen ist oder nicht verwendet wird. Ein Bewegungsverlauf wird nicht gespeichert.',
         'Check-ins: an welcher Station du wann angekommen und wieder gegangen bist.',
         'Inhalte: deine Chat-Nachrichten und Durchsagen, eingetragene Ausgaben und Ausgleichszahlungen sowie Fotos und Videos, die du in die Collage lädst.',
         'Gerät: eine Push-Kennung deines Geräts, damit Benachrichtigungen ankommen.',
@@ -68,7 +68,7 @@ export function privacySections(): LegalSection[] {
     {
       title: '6. Wie lange werden die Daten gespeichert?',
       paragraphs: [
-        'Standort: bis der Hop beendet wird oder du das Teilen pausierst – dann wird deine Position gelöscht.',
+        'Standort: bis du das Teilen pausierst, den Hop verlässt oder er gelöscht wird – dann wird deine Position gelöscht.',
         'Check-ins, Nachrichten, Ausgaben, Fotos und Videos: bis du sie löschst, die Organisation den Hop löscht oder du dein Konto löschst.',
         'Konto: bis du es löschst (Profil → Konto löschen). Dabei werden Anmeldedaten, Name, Profilbild, Nachrichten, Fotos, Videos, Check-ins und Standort gelöscht. Ausgaben, an denen andere beteiligt sind, bleiben für deren Abrechnung ohne deinen Namen unter „Gelöschtes Konto“ bestehen.',
       ],

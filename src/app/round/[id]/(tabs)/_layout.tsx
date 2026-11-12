@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { IconButton, type IconName, StatusPill } from '@/components/ui';
+import { IconButton, type IconName } from '@/components/ui';
 import { WaveText } from '@/components/WaveText';
 import { fonts, softShadow, space, useColors } from '@/lib/theme';
 import { useRound } from '@/providers/RoundProvider';
@@ -21,7 +21,6 @@ function Header() {
         <View style={{ flexShrink: 1 }}>
           <WaveText text={round.name} every={12000} height={4} style={{ fontFamily: fonts.display, fontSize: 20, color: c.ink, letterSpacing: -0.4 }} />
         </View>
-        <StatusPill status={round.status} />
       </View>
       <IconButton icon={isOrganizer ? 'options' : 'information-circle-outline'} label={isOrganizer ? 'Organisation' : 'Hop-Info'}
         onPress={() => router.push(`/round/${round.id}/dashboard`)} />

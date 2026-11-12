@@ -51,7 +51,7 @@ async function startBackgroundTracking() {
     showsBackgroundLocationIndicator: true,
     foregroundService: {
       notificationTitle: 'DayHop teilt deinen Standort',
-      notificationBody: 'Deine Gruppe sieht, wo du bist, solange der Hop läuft.',
+      notificationBody: 'Deine Gruppe sieht, wo du bist. Pausieren kannst du das in der App.',
       notificationColor: '#5B3DF5',
     },
   });

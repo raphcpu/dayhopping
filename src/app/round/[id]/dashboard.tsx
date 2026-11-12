@@ -8,7 +8,7 @@ import { DateField } from '@/components/DateField';
 import { showMenu } from '@/components/Menu';
 import { showProfile } from '@/components/ProfileSheet';
 import { TrackingSheet } from '@/components/TrackingSheet';
-import { Avatar, Body, Button, Card, Divider, Field, Heading, IconButton, ListRow, SectionLabel, Sheet, StatusPill } from '@/components/ui';
+import { Avatar, Body, Button, Card, Divider, Field, Heading, IconButton, ListRow, SectionLabel, Sheet } from '@/components/ui';
 import { shareCostsCsv, sharePdf, shareVisitsCsv } from '@/lib/export';
 import { errorText, formatAgo, formatDay, formatDuration, formatTime, parseDay, toDay } from '@/lib/format';
 import { deleteMedia } from '@/lib/media';
@@ -18,7 +18,7 @@ import { formatEuro } from '@/lib/money';
 import { memberStats, stationStats } from '@/lib/stats';
 import { supabase } from '@/lib/supabase';
 import { fonts, radius, softShadow, space, useColors } from '@/lib/theme';
-import type { Member, Report, RoundStatus } from '@/lib/types';
+import type { Member, Report } from '@/lib/types';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRound } from '@/providers/RoundProvider';
 
@@ -62,14 +62,6 @@ export default function Dashboard() {
       setBusy(null);
     }
   };
-
-  const setStatus = (status: RoundStatus) => run('status', () => supabase.rpc('set_round_status', { p_round: round.id, p_status: status }));
-
-  const confirmEnd = () =>
-    Alert.alert('Hop beenden?', 'Die Ortung stoppt für alle und die Standorte werden gelöscht. Chat, Kosten und Collage bleiben erhalten.', [
-      { text: 'Abbrechen', style: 'cancel' },
-      { text: 'Beenden', style: 'destructive', onPress: () => setStatus('beendet') },
-    ]);
 
   const invite = () =>
     Share.share({ message: `Komm mit zu „${round.name}“ am ${formatDay(round.day)}! Öffne DayHop, tippe auf „Code eingeben“ und gib ${round.invite_code} ein.` });
@@ -188,19 +180,9 @@ export default function Dashboard() {
             <Heading size={24}>{round.name}</Heading>
             <Body muted>{formatDay(round.day)}</Body>
           </View>
-          <StatusPill status={round.status} />
         </View>
         {isOrganizer && (
           <>
-            {round.status === 'geplant' && (
-              <>
-                <Body muted small>Mit dem Start beginnt die Ortung: Alle sehen sich live auf der Karte und werden an den Stationen automatisch eingecheckt.</Body>
-                <Button title="Hop starten" icon="play" onPress={() => setStatus('aktiv')} loading={busy === 'status'} disabled={stations.length === 0} />
-                {stations.length === 0 && <Body muted small>Lege zuerst mindestens eine Station an.</Body>}
-              </>
-            )}
-            {round.status === 'aktiv' && <Button title="Hop beenden" variant="soft" icon="stop" onPress={confirmEnd} loading={busy === 'status'} />}
-            {round.status === 'beendet' && <Button title="Hop wieder starten" variant="soft" icon="refresh" onPress={() => setStatus('aktiv')} loading={busy === 'status'} />}
             <Button small variant="ghost" icon="create-outline" title="Name und Tag ändern" onPress={() => { setName(round.name); setDay(parseDay(round.day)); setEditOpen(true); }} />
           </>
         )}
@@ -242,7 +224,7 @@ export default function Dashboard() {
       )}
 
       {isOrganizer && (
-        <Button title="Durchsage an alle" variant="soft" icon="megaphone" onPress={() => setAnnounceOpen(true)} />
+        <Button title="Durchsage an alle" variant="sun" icon="megaphone" onPress={() => setAnnounceOpen(true)} />
       )}
 
       {/* Stationen mit Besuchsstatistik */}
@@ -320,7 +302,7 @@ export default function Dashboard() {
         <SectionLabel>Deine Einstellungen</SectionLabel>
         <Card style={{ paddingVertical: space.s }}>
           <ListRow onPress={() => setTrackingOpen(true)} left={<Ionicons name="navigate" size={24} color={c.teal} />} title="Standort teilen"
-            subtitle={me.sharing ? 'An – solange der Hop läuft' : 'Pausiert'} right={<Ionicons name="chevron-forward" size={20} color={c.muted} />} />
+            subtitle={me.sharing ? 'An – deine Gruppe sieht, wo du bist' : 'Pausiert'} right={<Ionicons name="chevron-forward" size={20} color={c.muted} />} />
           {Platform.OS === 'android' && (
             <>
               <Divider />

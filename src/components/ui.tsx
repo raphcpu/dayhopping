@@ -1,10 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { type ReactNode, useState } from 'react';
-import {
-  ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, type StyleProp, StyleSheet, Text,
-  TextInput, type TextInputProps, type TextStyle, View, type ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, type StyleProp, StyleSheet, Text, TextInput, type TextInputProps, type TextStyle, View, type ViewStyle } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { initials } from '@/lib/format';
 import { avatarUrl } from '@/lib/supabase';
@@ -43,7 +41,7 @@ type ButtonProps = {
 
 export function Button({ title, onPress, variant = 'primary', icon, loading, disabled, small, style }: ButtonProps) {
   const c = useColors();
-  const bg = { primary: c.accent, soft: c.sunken, ghost: 'transparent', danger: 'transparent', sun: c.sun }[variant];
+  const bg = { primary: c.accent, soft: c.sunken, ghost: 'transparent', danger: 'transparent', sun: '#FFD43B' }[variant];
   const fg = { primary: c.onAccent, soft: c.ink, ghost: c.ink, danger: c.danger, sun: '#1E1B16' }[variant];
   return (
     <Pressable
@@ -197,7 +195,7 @@ export function Sheet({ visible, onClose, title, children }: { visible: boolean;
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
+      <KeyboardAvoidingView behavior="padding" automaticOffset style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16,24,40,0.42)' }]} onPress={onClose} accessibilityLabel="Schließen" />
         <View style={{ backgroundColor: c.bg, borderTopLeftRadius: 30, borderTopRightRadius: 30, maxHeight: '90%', paddingBottom: insets.bottom + space.l, ...softShadow(c, 2) }}>
           <View style={{ alignItems: 'center', paddingTop: 10 }}>

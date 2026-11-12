@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateField } from '@/components/DateField';
-import { Avatar, Body, Button, Card, EmptyState, Field, Heading, Sheet, StatusPill } from '@/components/ui';
+import { Avatar, Body, Button, Card, EmptyState, Field, Heading, Sheet } from '@/components/ui';
 import { WaveText } from '@/components/WaveText';
 import { errorText, formatDay, toDay } from '@/lib/format';
 import { storage } from '@/lib/storage';
@@ -108,13 +108,12 @@ export default function Home() {
           <EmptyState icon="footsteps" title="Noch kein Hop" text="Plane einen Tag mit mehreren Stationen oder tritt mit einem Einladungscode einem Hop bei." />
         ) : undefined}
         renderItem={({ item }) => (
-          <Card onPress={() => router.push(`/round/${item.id}`)} style={item.status === 'aktiv' ? { borderColor: c.accent, borderWidth: 2 } : undefined}>
+          <Card onPress={() => router.push(`/round/${item.id}`)} >
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.m }}>
               <View style={{ flex: 1, gap: 4 }}>
                 <Heading size={21}>{item.name}</Heading>
                 <Body muted small>{formatDay(item.day)}</Body>
               </View>
-              <StatusPill status={item.status} />
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.l, marginTop: space.m }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>

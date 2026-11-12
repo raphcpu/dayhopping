@@ -269,3 +269,7 @@ $$;
 -- Etage und Name auf der Klingel je Station
 alter table public.stations add column if not exists floor text check (char_length(floor) <= 40);
 alter table public.stations add column if not exists bell text check (char_length(bell) <= 60);
+
+-- Hops sind ab dem Anlegen dauerhaft aktiv (kein Starten/Beenden mehr)
+alter table public.rounds alter column status set default 'aktiv';
+update public.rounds set status = 'aktiv', started_at = coalesce(started_at, now()), ended_at = null where status <> 'aktiv';

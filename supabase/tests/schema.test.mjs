@@ -57,9 +57,8 @@ await q(`select reorder_stations($1, $2)`, [round, [s2, s1]]);
 ok((await q(`select name from stations order by position`))[0].name === 'Bar Alster', 'Stationen umsortiert');
 await q(`select reorder_stations($1, $2)`, [round, [s1, s2]]);
 
-await as(ben);
-ok((await q(`select report_location(53.55, 9.99, 10)`))[0].report_location === 0, 'Keine Ortung, solange Hop nicht läuft');
-await as(anna); await q(`select set_round_status($1,'aktiv')`, [round]);
+await as(anna);
+ok((await q(`select status from rounds where id = $1`, [round]))[0].status === 'aktiv', 'Neuer Hop ist sofort aktiv');
 await as(ben);
 const t = (m) => new Date(Date.now() - (60 - m) * 60000).toISOString();
 const rep = async (lat, lng, acc, m) => (await q(`select report_location($1,$2,$3,null,null,$4)`, [lat, lng, acc, t(m)]))[0].report_location;

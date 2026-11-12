@@ -42,7 +42,7 @@ export function TrackingSheet({ visible, onClose }: { visible: boolean; onClose:
       <View style={{ gap: space.m }}>
         {point('people', 'Alle in diesem Hop sehen live auf der Karte, wo du bist – sonst niemand.')}
         {point('checkmark-circle', 'Kommst du an einer Station an, wirst du automatisch eingecheckt.')}
-        {point('timer', 'Geteilt wird nur, solange der Hop läuft. Danach wird dein Standort gelöscht. Ein Bewegungsverlauf wird nicht gespeichert.')}
+        {point('timer', 'Pausierst du das Teilen oder verlässt du den Hop, wird dein Standort sofort gelöscht. Ein Bewegungsverlauf wird nicht gespeichert.')}
       </View>
 
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.m }}>
@@ -53,7 +53,6 @@ export function TrackingSheet({ visible, onClose }: { visible: boolean; onClose:
         <Switch value={me.sharing} onValueChange={setSharing} trackColor={{ true: c.teal }} />
       </Card>
 
-      {round.status !== 'aktiv' && <Body muted small>Der Hop läuft gerade nicht. Die Ortung startet erst, wenn die Organisation ihn startet.</Body>}
 
       {round.status === 'aktiv' && me.sharing && tracking === 'keine-berechtigung' && (
         <Button title="Standortzugriff erlauben" icon="navigate" onPress={allow} loading={busy} />
