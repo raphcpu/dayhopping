@@ -17,6 +17,7 @@ export type Member = {
 export type Station = {
   id: string; round_id: string; position: number; name: string; address: string | null;
   lat: number; lng: number; radius_m: number; planned_at: string | null; note: string | null;
+  color: string | null;
 };
 
 export type LiveLocation = {

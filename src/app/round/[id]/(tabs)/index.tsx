@@ -1,13 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Dimensions, FlatList, Image, Linking, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, Text, View } from 'react-native';
 import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { MapMissing } from '@/components/MapMissing';
+import { StationGlow } from '@/components/StationGlow';
 import { TrackingSheet } from '@/components/TrackingSheet';
 import { Avatar, AvatarStack, Body, Button, Card, Heading, IconButton } from '@/components/ui';
 import { useBatteryOptimized } from '@/lib/battery';
 import { mapsConfigured } from '@/lib/config';
+import { glowLevel, stationColor, withAlpha } from '@/lib/stationColors';
+import { storage } from '@/lib/storage';
 import { errorText, formatAgo, formatTime, initials } from '@/lib/format';
 import { stationStats } from '@/lib/stats';
 import { avatarUrl, supabase } from '@/lib/supabase';
@@ -61,10 +64,17 @@ export default function MapTab() {
   const list = useRef<FlatList>(null);
   const [selected, setSelected] = useState(0);
   const [trackingOpen, setTrackingOpen] = useState(false);
-  const [dismissed, setDismissed] = useState<string | null>(null);
+  // Zeitpunkt der zuletzt geschlossenen Durchsage; bleibt über App-Neustarts erhalten
+  const [dismissedUntil, setDismissedUntil] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState(false);
   const battery = useBatteryOptimized();
+  // Wabern nur, solange die Karte sichtbar ist (spart Akku)
+  const [visible, setVisible] = useState(false);
+  useFocusEffect(useCallback(() => {
+    setVisible(true);
+    return () => setVisible(false);
+  }, []));
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
@@ -135,10 +145,20 @@ export default function MapTab() {
     }
   }, [active, me?.sharing, tracking]);
 
+  const dismissKey = round ? `dayhop:durchsage:${round.id}` : null;
+  useEffect(() => {
+    if (dismissKey) storage.getItem(dismissKey).then(setDismissedUntil);
+  }, [dismissKey]);
+  const dismissAnnouncement = (createdAt: string) => {
+    setDismissedUntil(createdAt);
+    if (dismissKey) storage.setItem(dismissKey, createdAt);
+  };
+
   const announcement = useMemo(() => {
     const a = messages.find((m) => m.kind === 'announcement');
-    return a && a.id !== dismissed && now - new Date(a.created_at).getTime() < 60 * 60_000 ? a : null;
-  }, [messages, dismissed, now]);
+    if (!a || now - new Date(a.created_at).getTime() >= 60 * 60_000) return null;
+    return dismissedUntil && a.created_at <= dismissedUntil ? null : a;
+  }, [messages, dismissedUntil, now]);
 
   if (!round) return null;
 
@@ -176,19 +196,38 @@ export default function MapTab() {
         {stations.length > 1 && (
           <Polyline coordinates={stations.map((s) => ({ latitude: s.lat, longitude: s.lng }))} strokeColor={c.accent} strokeWidth={4} geodesic />
         )}
+        {stats.map((st, i) => (
+          <StationGlow key={`glow-${st.station.id}`} lat={st.station.lat} lng={st.station.lng} radius={st.station.radius_m}
+            color={stationColor(st.station, i)} present={st.present.length} animate={visible} />
+        ))}
         {sel && (
-          <Circle center={{ latitude: sel.lat, longitude: sel.lng }} radius={sel.radius_m} strokeColor={c.accent} strokeWidth={1.5} fillColor="rgba(255,90,54,0.14)" />
+          <Circle center={{ latitude: sel.lat, longitude: sel.lng }} radius={sel.radius_m} zIndex={25}
+            strokeColor={stationColor(sel, selected)} strokeWidth={2} fillColor={withAlpha(stationColor(sel, selected), 0.08)} />
         )}
         {stations.map((s, i) => {
           const here = myOpen?.station_id === s.id;
           const done = myVisited.has(s.id);
           const on = i === selected;
+          const present = stats[i]?.present.length ?? 0;
+          const col = stationColor(s, i);
+          // Größer, je mehr Leute eingecheckt sind
+          const size = glowLevel(present).markerSize + (on ? 6 : 0);
           return (
-            <Marker key={`${s.id}-${i}-${here}-${done}-${on}`} coordinate={{ latitude: s.lat, longitude: s.lng }} anchor={{ x: 0.5, y: 0.5 }}
-              tracksViewChanges={false} zIndex={on ? 12 : 10} onPress={() => focusStation(i)}>
-              <View style={{ width: on ? 40 : 34, height: on ? 40 : 34, borderRadius: 20, backgroundColor: done ? '#0E7C72' : '#FF5A36', borderWidth: 3, borderColor: '#fff',
-                alignItems: 'center', justifyContent: 'center' }}>
-                {done && !here ? <Ionicons name="checkmark" size={18} color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: on ? 17 : 15 }}>{i + 1}</Text>}
+            <Marker key={`${s.id}-${i}-${here}-${done}-${on}-${present}-${col}`} coordinate={{ latitude: s.lat, longitude: s.lng }} anchor={{ x: 0.5, y: 0.5 }}
+              tracksViewChanges={false} zIndex={on ? 32 : 30} onPress={() => focusStation(i)}>
+              <View style={{ width: size + 8, height: size + 8, alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: col, borderWidth: 3, borderColor: '#fff',
+                  alignItems: 'center', justifyContent: 'center' }}>
+                  {done && !here && present === 0 ? <Ionicons name="checkmark" size={18} color="#fff" /> : (
+                    <Text style={{ color: '#fff', fontWeight: '800', fontSize: Math.round(size * 0.42), textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 2 }}>{i + 1}</Text>
+                  )}
+                </View>
+                {present > 0 && (
+                  <View style={{ position: 'absolute', top: 0, right: 0, minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 5, backgroundColor: '#1E1B16',
+                    borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>{present}</Text>
+                  </View>
+                )}
               </View>
             </Marker>
           );
@@ -216,7 +255,7 @@ export default function MapTab() {
               <Text style={{ color: '#1E1B16', fontWeight: '700', fontSize: 12 }}>DURCHSAGE · {formatTime(announcement.created_at)}</Text>
               <Text style={{ color: '#1E1B16', fontSize: 16, lineHeight: 21 }}>{announcement.body}</Text>
             </View>
-            <Pressable onPress={() => setDismissed(announcement.id)} hitSlop={12} accessibilityLabel="Durchsage ausblenden">
+            <Pressable onPress={() => dismissAnnouncement(announcement.created_at)} hitSlop={12} accessibilityLabel="Durchsage ausblenden">
               <Ionicons name="close" size={22} color="#1E1B16" />
             </Pressable>
           </View>
@@ -280,7 +319,7 @@ export default function MapTab() {
                 <Card style={{ width: CARD_WIDTH, padding: space.m, gap: space.s, elevation: 4, shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } }}
                   onPress={() => focusStation(index)}>
                   <View style={{ flexDirection: 'row', gap: space.m, alignItems: 'center' }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: myVisited.has(s.id) ? c.teal : c.accent, alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: stationColor(s, index), alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>{index + 1}</Text>
                     </View>
                     <View style={{ flex: 1 }}>

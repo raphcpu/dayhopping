@@ -184,3 +184,10 @@ alter table public.client_errors enable row level security;
 create policy client_errors_insert on public.client_errors for insert to anon, authenticated
   with check (user_id is null or user_id = auth.uid());
 grant insert on public.client_errors to anon, authenticated;
+
+-- ----------------------------------------------------------------------------
+-- Stationsfarben: Leuchtfarbe je Station, innerhalb eines Hops nur einmal vergeben
+-- ----------------------------------------------------------------------------
+
+alter table public.stations add column if not exists color text check (color ~ '^#[0-9A-Fa-f]{6}$');
+create unique index if not exists stations_color_unique on public.stations (round_id, upper(color)) where color is not null;

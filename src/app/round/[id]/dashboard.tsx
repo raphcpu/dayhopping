@@ -12,6 +12,7 @@ import { shareCostsCsv, sharePdf, shareVisitsCsv } from '@/lib/export';
 import { errorText, formatAgo, formatDay, formatDuration, formatTime, parseDay, toDay } from '@/lib/format';
 import { deleteMedia } from '@/lib/media';
 import { useBatteryOptimized } from '@/lib/battery';
+import { stationColor } from '@/lib/stationColors';
 import { formatEuro } from '@/lib/money';
 import { memberStats, stationStats } from '@/lib/stats';
 import { supabase } from '@/lib/supabase';
@@ -249,7 +250,7 @@ export default function Dashboard() {
             <View key={s.station.id}>
               {i > 0 && <Divider />}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.m, paddingVertical: space.s }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: stationColor(s.station, i), alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: '#fff', fontWeight: '800' }}>{i + 1}</Text>
                 </View>
                 <View style={{ flex: 1 }}>

@@ -1,7 +1,8 @@
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateField } from '@/components/DateField';
@@ -9,6 +10,7 @@ import { MapMissing } from '@/components/MapMissing';
 import { Body, Button, Chip, Field, SectionLabel } from '@/components/ui';
 import { mapsConfigured } from '@/lib/config';
 import { errorText, parseDay } from '@/lib/format';
+import { STATION_COLORS } from '@/lib/stationColors';
 import { supabase } from '@/lib/supabase';
 import { radius, space, useColors } from '@/lib/theme';
 import { useRound } from '@/providers/RoundProvider';
@@ -31,6 +33,14 @@ export default function StationScreen() {
   const [radiusM, setRadiusM] = useState(existing?.radius_m ?? 60);
   const [time, setTime] = useState<Date | null>(existing?.planned_at ? new Date(existing.planned_at) : null);
   const [note, setNote] = useState(existing?.note ?? '');
+  // Farben anderer Stationen dieses Hops sind vergeben
+  const taken = useMemo(
+    () => new Set(stations.filter((s) => s.id !== existing?.id && s.color).map((s) => s.color!.toUpperCase())),
+    [stations, existing],
+  );
+  const [color, setColor] = useState<string | null>(
+    () => existing?.color ?? STATION_COLORS.find((c) => !taken.has(c.hex.toUpperCase()))?.hex ?? null,
+  );
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,13 +109,13 @@ export default function StationScreen() {
       d.setHours(time.getHours(), time.getMinutes(), 0, 0);
       plannedAt = d.toISOString();
     }
-    const row = { name: name.trim(), address: address.trim() || null, lat: pin.latitude, lng: pin.longitude, radius_m: radiusM, planned_at: plannedAt, note: note.trim() || null };
+    const row = { name: name.trim(), address: address.trim() || null, lat: pin.latitude, lng: pin.longitude, radius_m: radiusM, planned_at: plannedAt, note: note.trim() || null, color };
     setBusy('speichern');
     const { error } = existing
       ? await supabase.from('stations').update(row).eq('id', existing.id)
       : await supabase.from('stations').insert({ ...row, round_id: round.id, position: Math.max(0, ...stations.map((s) => s.position)) + 1 });
     setBusy(null);
-    if (error) return setError(errorText(error));
+    if (error) return setError(error.code === '23505' ? 'Diese Farbe hat gerade eine andere Station bekommen. Bitte wähle eine andere.' : errorText(error));
     router.back();
   };
 
@@ -147,6 +157,30 @@ export default function StationScreen() {
         </View>
 
         <Field label="Adresse (optional)" value={address} onChangeText={setAddress} placeholder="Wird beim Setzen des Punkts ausgefüllt" maxLength={160} />
+
+        <View>
+          <SectionLabel>Leuchtfarbe</SectionLabel>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.m }}>
+            {STATION_COLORS.map((col) => {
+              const isTaken = taken.has(col.hex.toUpperCase());
+              const on = color?.toUpperCase() === col.hex.toUpperCase();
+              return (
+                <Pressable key={col.hex} disabled={isTaken} onPress={() => setColor(col.hex)}
+                  accessibilityRole="radio" accessibilityState={{ selected: on, disabled: isTaken }}
+                  accessibilityLabel={`${col.name}${isTaken ? ', schon vergeben' : ''}`}
+                  style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: col.hex, opacity: isTaken ? 0.25 : 1,
+                    alignItems: 'center', justifyContent: 'center', borderWidth: on ? 4 : 0, borderColor: c.ink }}>
+                  {on && <Ionicons name="checkmark" size={24} color="#fff" />}
+                  {isTaken && <Ionicons name="close" size={22} color={c.ink} />}
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={{ fontSize: 13, color: c.muted, marginTop: space.s }}>
+            {color ? `${STATION_COLORS.find((x) => x.hex.toUpperCase() === color.toUpperCase())?.name ?? 'Eigene Farbe'}: ` : ''}
+            In dieser Farbe leuchtet die Station auf der Karte. Durchgestrichene Farben haben schon andere Stationen.
+          </Text>
+        </View>
 
         <View>
           <SectionLabel>Check-in-Radius</SectionLabel>
