@@ -1,0 +1,37 @@
+# Stellt die APK eines Build-Laufs als direkten Download bereit (ohne GitHub-Anmeldung):
+# https://github.com/<besitzer>/<repo>/releases/download/apk-latest/DayHop.apk
+name: APK veröffentlichen
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'ID des Build-Laufs (Zahl aus der Adresse .../actions/runs/<ID>)'
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: DayHop-APK
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: apk
+      - run: cp "$(ls apk/*.apk | head -1)" DayHop.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: DayHop – neueste APK
+          body: |
+            Neueste Android-Version von DayHop (Build-Lauf ${{ inputs.run_id }}).
+            Auf dem Handy herunterladen, öffnen und die Installation erlauben. Eine ältere Version wird dabei aktualisiert.
+          prerelease: true
+          make_latest: false
+          files: DayHop.apk
+          fail_on_unmatched_files: true

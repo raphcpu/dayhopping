@@ -21,6 +21,8 @@ on:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     timeout-minutes: 75
     env:
       # Öffentliche Werte des Supabase-Projekts "dayhop" (stecken ohnehin in jeder App). Secrets gleichen Namens haben Vorrang.
@@ -93,6 +95,16 @@ jobs:
             echo "::warning::Kein eigener Signaturschlüssel hinterlegt. Die APK wird mit dem öffentlichen Test-Schlüssel signiert: zum Ausprobieren in Ordnung, vor der Weitergabe an die Gruppe bitte ANDROID_KEYSTORE_* setzen (siehe README)."
           fi
           ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64 $sign
+
+      - name: APK als direkten Download veröffentlichen
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cp "$(ls android/app/build/outputs/apk/release/*.apk | head -1)" DayHop.apk
+          gh release view apk-latest >/dev/null 2>&1 || gh release create apk-latest --prerelease --title "DayHop – neueste APK" --notes "Neueste Android-Version von DayHop. Auf dem Handy herunterladen, öffnen und die Installation erlauben."
+          gh release upload apk-latest DayHop.apk --clobber
+          gh release edit apk-latest --notes "Neueste Android-Version von DayHop (Build-Lauf $GITHUB_RUN_ID, Stand $(date -u '+%d.%m.%Y %H:%M') UTC). Auf dem Handy herunterladen, öffnen und die Installation erlauben."
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: APK bereitstellen
         uses: actions/upload-artifact@v4
