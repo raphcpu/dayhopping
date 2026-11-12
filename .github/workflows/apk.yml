@@ -28,7 +28,7 @@ jobs:
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_oNs39mriXVQiLInCdfsTqw_LLlA7HB1' }}
       # Android-Maps-Schlüssel steckt ohnehin im Manifest jeder APK. In der Google Cloud Console
       # auf Android-Apps (Paket + SHA-1 des Signaturschlüssels) beschränken. Ein Secret gleichen Namens hat Vorrang.
-      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY || 'AIzaSyCOhKVHHy_422qatYmWU4jLpyBnsv6Tsy4' }}
+      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY || 'AIzaSyBdAWSX9kR-pJxe6su46OJ_VzRCNdXNrKs' }}
       EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
       APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
       EXPO_PUBLIC_LEGAL_NAME: ${{ secrets.EXPO_PUBLIC_LEGAL_NAME }}
