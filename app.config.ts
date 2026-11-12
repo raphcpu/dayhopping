@@ -28,6 +28,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       monochromeImage: './assets/android-icon-monochrome.png',
     },
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON || undefined,
+    // erlaubt den direkten Dialog „Akku-Optimierung ausschalten“ (für zuverlässige Hintergrund-Ortung)
+    permissions: ['android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS'],
   },
   plugins: [
     'expo-router',

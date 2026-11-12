@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Linking, Switch, View } from 'react-native';
+import { Linking, Platform, Switch, View } from 'react-native';
+import { useBatteryOptimized } from '@/lib/battery';
 import { supabase } from '@/lib/supabase';
 import { space, useColors } from '@/lib/theme';
 import { useRound } from '@/providers/RoundProvider';
@@ -11,6 +12,7 @@ export function TrackingSheet({ visible, onClose }: { visible: boolean; onClose:
   const c = useColors();
   const { round, me, tracking, askTracking, reload, refreshTracking } = useRound();
   const [busy, setBusy] = useState(false);
+  const battery = useBatteryOptimized();
   if (!round || !me) return null;
 
   const setSharing = async (sharing: boolean) => {
@@ -63,6 +65,21 @@ export function TrackingSheet({ visible, onClose }: { visible: boolean; onClose:
           </View>
           <Button title="„Immer“ erlauben" icon="navigate" onPress={allow} loading={busy} />
           <Button title="Einstellungen öffnen" variant="soft" icon="settings-outline" onPress={() => Linking.openSettings()} />
+        </View>
+      )}
+      {Platform.OS === 'android' && me.sharing && battery.optimized && (
+        <View style={{ gap: space.m, backgroundColor: c.sunSoft, borderRadius: 16, padding: space.l }}>
+          <Body small>
+            <Body small bold>Akku-Optimierung ist an.</Body> Android beendet die Ortung dann oft nach ein paar Minuten im Hintergrund. Schalte sie für DayHop aus, damit deine Gruppe dich durchgehend sieht.
+          </Body>
+          <Button title="Akku-Optimierung ausschalten" icon="battery-charging" onPress={battery.disable} />
+          <Body muted small>Bei Samsung zusätzlich: Einstellungen → Akku → Hintergrundnutzungslimits → „Nie in Standby versetzte Apps“ → DayHop hinzufügen.</Body>
+        </View>
+      )}
+      {Platform.OS === 'android' && me.sharing && !battery.optimized && (
+        <View style={{ flexDirection: 'row', gap: space.s, alignItems: 'center' }}>
+          <Ionicons name="battery-charging" size={18} color={c.teal} />
+          <Body small style={{ color: c.teal }}>Akku-Optimierung ist für DayHop aus.</Body>
         </View>
       )}
       {round.status === 'aktiv' && me.sharing && tracking === 'hintergrund' && (

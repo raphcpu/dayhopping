@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, Share, Switch, Text, View } from 'react-native';
+import { Alert, Platform, ScrollView, Share, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateField } from '@/components/DateField';
 import { showMenu } from '@/components/Menu';
@@ -11,6 +11,7 @@ import { Avatar, Body, Button, Card, Divider, Field, Heading, IconButton, ListRo
 import { shareCostsCsv, sharePdf, shareVisitsCsv } from '@/lib/export';
 import { errorText, formatAgo, formatDay, formatDuration, formatTime, parseDay, toDay } from '@/lib/format';
 import { deleteMedia } from '@/lib/media';
+import { useBatteryOptimized } from '@/lib/battery';
 import { formatEuro } from '@/lib/money';
 import { memberStats, stationStats } from '@/lib/stats';
 import { supabase } from '@/lib/supabase';
@@ -34,6 +35,7 @@ export default function Dashboard() {
   const [day, setDay] = useState<Date>(round ? parseDay(round.day) : new Date());
   const [copied, setCopied] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const battery = useBatteryOptimized();
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
@@ -314,6 +316,16 @@ export default function Dashboard() {
         <Card style={{ paddingVertical: space.s }}>
           <ListRow onPress={() => setTrackingOpen(true)} left={<Ionicons name="navigate" size={24} color={c.teal} />} title="Standort teilen"
             subtitle={me.sharing ? 'An – solange der Hop läuft' : 'Pausiert'} right={<Ionicons name="chevron-forward" size={20} color={c.muted} />} />
+          {Platform.OS === 'android' && (
+            <>
+              <Divider />
+              <ListRow onPress={battery.optimized ? battery.disable : undefined}
+                left={<Ionicons name={battery.optimized ? 'battery-dead' : 'battery-charging'} size={24} color={battery.optimized ? c.danger : c.teal} />}
+                title="Akku-Optimierung"
+                subtitle={battery.optimized ? 'An – bremst die Ortung. Antippen zum Ausschalten.' : 'Aus – Ortung läuft zuverlässig im Hintergrund.'}
+                right={battery.optimized ? <Ionicons name="chevron-forward" size={20} color={c.muted} /> : undefined} />
+            </>
+          )}
           <Divider />
           <ListRow left={<Ionicons name="notifications-off" size={24} color={c.muted} />} title="Chat stummschalten" subtitle="Durchsagen kommen trotzdem an."
             right={<Switch value={me.muted} trackColor={{ true: c.accent }}

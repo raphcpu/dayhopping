@@ -6,6 +6,7 @@ import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native
 import { MapMissing } from '@/components/MapMissing';
 import { TrackingSheet } from '@/components/TrackingSheet';
 import { Avatar, AvatarStack, Body, Button, Card, Heading, IconButton } from '@/components/ui';
+import { useBatteryOptimized } from '@/lib/battery';
 import { mapsConfigured } from '@/lib/config';
 import { errorText, formatAgo, formatTime, initials } from '@/lib/format';
 import { stationStats } from '@/lib/stats';
@@ -63,6 +64,7 @@ export default function MapTab() {
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState(false);
+  const battery = useBatteryOptimized();
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
@@ -144,6 +146,8 @@ export default function MapTab() {
     ? { icon: 'pause-circle' as const, text: round.status === 'geplant' ? 'Ortung startet mit dem Hop' : 'Hop beendet', bg: c.card, fg: c.muted }
     : !me?.sharing
       ? { icon: 'eye-off' as const, text: 'Standort pausiert', bg: c.card, fg: c.ink }
+      : tracking === 'hintergrund' && battery.optimized
+        ? { icon: 'battery-dead' as const, text: 'Akku-Sparen bremst Ortung', bg: c.sunSoft, fg: c.ink }
       : tracking === 'hintergrund'
         ? { icon: 'navigate' as const, text: 'Standort wird geteilt', bg: c.tealSoft, fg: c.teal }
         : tracking === 'vordergrund'
