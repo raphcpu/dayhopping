@@ -35,10 +35,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const profile = loaded && loaded.id === userId ? loaded : null;
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data }) => setSession(data.session))
+      .catch(() => setSession(null)) // z. B. beschädigte Sitzung: zur Anmeldung statt ewig Startbildschirm
+      .finally(() => setLoading(false));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
   }, []);

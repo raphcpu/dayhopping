@@ -102,7 +102,7 @@ export function Card({ children, style, onPress }: { children: ReactNode; style?
   const c = useColors();
   const base: ViewStyle = { backgroundColor: c.card, borderRadius: radius.l, padding: space.l + 2, ...softShadow(c, 1) };
   if (!onPress) return <View style={[base, style]}>{children}</View>;
-  return <Pressable onPress={onPress} style={({ pressed }) => [base, { transform: [{ scale: pressed ? 0.99 : 1 }] }, style]}>{children}</Pressable>;
+  return <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [base, { transform: [{ scale: pressed ? 0.99 : 1 }] }, style]}>{children}</Pressable>;
 }
 
 export function Chip({ label, active, onPress, icon }: { label: string; active?: boolean; onPress?: () => void; icon?: IconName }) {
@@ -233,7 +233,7 @@ export function ListRow({ left, title, subtitle, right, onPress }: { left?: Reac
       {right}
     </View>
   );
-  return onPress ? <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>{inner}</Pressable> : inner;
+  return onPress ? <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>{inner}</Pressable> : inner;
 }
 
 /** Abstand zwischen Zeilen einer Karte (bewusst ohne Linie) */

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, usePreventRemove, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
@@ -17,11 +17,19 @@ export default function ExpenseScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const navigation = useNavigation();
   const { expenseId } = useLocalSearchParams<{ expenseId?: string }>();
   const { userId } = useAuth();
   const { round, members, stations, checkins, expenses, isOrganizer } = useRound();
   const existing = useMemo(() => expenses.find((e) => e.id === expenseId) ?? null, [expenses, expenseId]);
-  const canEdit = !existing || existing.created_by === userId || existing.payer_id === userId || isOrganizer;
+  // Ausgabe wurde inzwischen gelöscht: nicht versehentlich als neue speichern
+  const missing = !!expenseId && !existing;
+  // Beteiligte, die den Hop verlassen haben: deren Anteile würden beim Speichern verloren gehen
+  const formerParticipants = useMemo(
+    () => (existing ? existing.shares.filter((s) => !members.some((m) => m.user_id === s.user_id)).length : 0),
+    [existing, members],
+  );
+  const canEdit = !missing && formerParticipants === 0 && (!existing || existing.created_by === userId || existing.payer_id === userId || isOrganizer);
 
   const [title, setTitle] = useState(existing?.title ?? '');
   const [amountText, setAmountText] = useState(existing ? centsToInput(existing.amount_cents) : '');
@@ -41,6 +49,16 @@ export default function ExpenseScreen() {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  // Ungespeicherte Eingaben nicht stillschweigend verwerfen (Zurück, Wischgeste)
+  const dirty = !saved && canEdit && (title !== (existing?.title ?? '') || amountText !== (existing ? centsToInput(existing.amount_cents) : ''));
+  usePreventRemove(dirty, ({ data }) => {
+    Alert.alert('Änderungen verwerfen?', 'Die Ausgabe ist noch nicht gespeichert.', [
+      { text: 'Weiter bearbeiten', style: 'cancel' },
+      { text: 'Verwerfen', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+    ]);
+  });
 
   // Wer war an einer Station eingecheckt (jemals bzw. gerade)?
   const attendees = useMemo(() => {
@@ -99,7 +117,8 @@ export default function ExpenseScreen() {
     });
     setBusy(false);
     if (error) return setError(errorText(error));
-    router.back();
+    setSaved(true);
+    setTimeout(() => router.back(), 0);
   };
 
   const remove = () => {
@@ -108,7 +127,8 @@ export default function ExpenseScreen() {
       { text: 'Löschen', style: 'destructive', onPress: async () => {
         const { error } = await supabase.rpc('delete_expense', { p_id: existing!.id });
         if (error) return Alert.alert('Das hat nicht geklappt', errorText(error));
-        router.back();
+        setSaved(true);
+        setTimeout(() => router.back(), 0);
       } },
     ]);
   };
@@ -121,7 +141,17 @@ export default function ExpenseScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior="padding" automaticOffset>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: space.l, paddingBottom: insets.bottom + space.xl, gap: space.xl }}>
-        {!canEdit && (
+        {missing && (
+          <View style={{ backgroundColor: c.sunSoft, borderRadius: radius.m, padding: space.m }}>
+            <Body small>Diese Ausgabe wurde inzwischen gelöscht.</Body>
+          </View>
+        )}
+        {!missing && formerParticipants > 0 && (
+          <View style={{ backgroundColor: c.sunSoft, borderRadius: radius.m, padding: space.m }}>
+            <Body small>An dieser Ausgabe sind Personen beteiligt, die den Hop verlassen haben. Damit ihre Anteile erhalten bleiben, lässt sie sich nicht mehr ändern.</Body>
+          </View>
+        )}
+        {!missing && formerParticipants === 0 && !canEdit && (
           <View style={{ backgroundColor: c.sunSoft, borderRadius: radius.m, padding: space.m }}>
             <Body small>Ändern können diese Ausgabe nur, wer sie eingetragen oder bezahlt hat, und die Organisation.</Body>
           </View>

@@ -21,7 +21,9 @@ async function uploadFile(bucket: string, path: string, uri: string, contentType
       'x-upsert': upsert ? 'true' : 'false',
     },
   });
-  if (res.status < 200 || res.status >= 300) throw new Error(`Upload fehlgeschlagen (${res.status})`);
+  if (res.status === 413) throw new Error('Die Datei ist zu groß (höchstens 50 MB).');
+  if (res.status === 401 || res.status === 403) throw new Error('Keine Berechtigung zum Hochladen. Melde dich ab und wieder an.');
+  if (res.status < 200 || res.status >= 300) throw new Error(`Hochladen fehlgeschlagen (Fehler ${res.status}). Prüf deine Verbindung.`);
 }
 
 export async function pickFromLibrary(): Promise<ImagePicker.ImagePickerAsset[]> {

@@ -126,7 +126,7 @@ export default function MapTab() {
       const p = profileOf(uid);
       return Alert.alert(uid === userId ? 'Kein Standort' : p.display_name, uid === userId
         ? 'Dein Standort wird gerade nicht geteilt.'
-        : active ? 'Teilt gerade keinen Standort.' : 'Standorte sind erst sichtbar, wenn der Hop läuft.');
+        : 'Teilt gerade keinen Standort oder hat das Teilen pausiert.');
     }
     map.current?.animateToRegion({ latitude: l.lat - 0.0008, longitude: l.lng, latitudeDelta: 0.005, longitudeDelta: 0.005 }, 400);
   };
@@ -176,7 +176,7 @@ export default function MapTab() {
           : { icon: 'navigate-outline' as const, text: 'Standort freigeben', bg: c.accent, fg: c.onAccent };
 
   const first = stations[0];
-  const sel = stations[selected];
+  const sel = stations[Math.min(selected, stations.length - 1)];
 
   return (
     <View style={{ flex: 1 }}>
@@ -288,7 +288,7 @@ export default function MapTab() {
         ) : !cardOpen ? null : (
           <FlatList
             ref={list}
-            initialScrollIndex={selected}
+            initialScrollIndex={Math.min(selected, Math.max(0, stations.length - 1))}
             data={stats}
             horizontal
             keyExtractor={(s) => s.station.id}

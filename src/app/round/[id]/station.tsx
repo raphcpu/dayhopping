@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, usePreventRemove, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert, Keyboard, Pressable, ScrollView, Text, View } from 'react-native';
@@ -21,6 +21,7 @@ export default function StationScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const navigation = useNavigation();
   const { stationId } = useLocalSearchParams<{ stationId?: string }>();
   const { round, stations, locations, isOrganizer } = useRound();
   const existing = useMemo(() => stations.find((s) => s.id === stationId) ?? null, [stations, stationId]);
@@ -47,6 +48,17 @@ export default function StationScreen() {
   );
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  // Ungespeicherte Eingaben nicht stillschweigend verwerfen
+  const dirty = !saved && isOrganizer && (name !== (existing?.name ?? '') || address !== (existing?.address ?? '') || note !== (existing?.note ?? '')
+    || (!!pin && (!existing || pin.latitude !== existing.lat || pin.longitude !== existing.lng)));
+  usePreventRemove(dirty, ({ data }) => {
+    Alert.alert('Änderungen verwerfen?', 'Die Station ist noch nicht gespeichert.', [
+      { text: 'Weiter bearbeiten', style: 'cancel' },
+      { text: 'Verwerfen', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+    ]);
+  });
 
   // Startausschnitt: vorhandener Punkt, sonst letzte Station, sonst die Gruppe, sonst Deutschland
   const start = useMemo(() => {
@@ -134,7 +146,8 @@ export default function StationScreen() {
       }
     }
     setBusy(null);
-    router.back();
+    setSaved(true);
+    setTimeout(() => router.back(), 0);
   };
 
   const remove = () => {
@@ -143,7 +156,8 @@ export default function StationScreen() {
       { text: 'Löschen', style: 'destructive', onPress: async () => {
         const { error } = await supabase.from('stations').delete().eq('id', existing!.id);
         if (error) return Alert.alert('Das hat nicht geklappt', errorText(error));
-        router.back();
+        setSaved(true);
+        setTimeout(() => router.back(), 0);
       } },
     ]);
   };

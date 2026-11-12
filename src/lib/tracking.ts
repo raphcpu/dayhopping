@@ -57,24 +57,42 @@ async function startBackgroundTracking() {
   });
 }
 
-async function hasActiveSharingRound(): Promise<boolean> {
+/** null = unbekannt (z. B. keine Verbindung): dann nichts an der laufenden Ortung ändern */
+async function hasActiveSharingRound(): Promise<boolean | null> {
   const { data: auth } = await supabase.auth.getSession();
   const uid = auth.session?.user.id;
   if (!uid) return false;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('round_members')
     .select('round_id, rounds!inner(status)')
     .eq('user_id', uid)
     .eq('sharing', true)
     .eq('rounds.status', 'aktiv')
     .limit(1);
+  if (error) return null;
   return (data?.length ?? 0) > 0;
 }
 
+// Mehrere Stellen fragen gleichzeitig an (Start, Rückkehr in die App, Einstellungen):
+// laufende Abgleiche zusammenfassen, statt die Ortung parallel zu starten.
+let inFlight: Promise<TrackingState> | null = null;
+
 /** Gleicht die Ortung mit dem Stand der Hops ab. Fragt selbst keine Berechtigungen an. */
-export async function syncTracking(): Promise<TrackingState> {
-  if (!(await hasActiveSharingRound())) {
+export function syncTracking(): Promise<TrackingState> {
+  inFlight ??= doSync().finally(() => {
+    inFlight = null;
+  });
+  return inFlight;
+}
+
+async function doSync(): Promise<TrackingState> {
+  const active = await hasActiveSharingRound().catch(() => null);
+  if (active === false) {
     await stopBackgroundTracking();
+    return 'aus';
+  }
+  if (active === null && !(await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK).catch(() => false))) {
+    // Offline und noch keine Ortung aktiv: nichts erzwingen, später erneut prüfen
     return 'aus';
   }
   const fg = await Location.getForegroundPermissionsAsync();

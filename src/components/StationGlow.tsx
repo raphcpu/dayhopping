@@ -17,7 +17,7 @@ export function StationGlow({ lat, lng, radius, color, present, animate }: Props
   useEffect(() => {
     if (!animate || !g.periodMs) return;
     const start = Date.now();
-    const id = setInterval(() => setPhase(((Date.now() - start) % g.periodMs) / g.periodMs), 66);
+    const id = setInterval(() => setPhase(((Date.now() - start) % g.periodMs) / g.periodMs), 100);
     return () => clearInterval(id);
   }, [animate, g.periodMs]);
 

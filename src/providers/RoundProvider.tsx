@@ -9,6 +9,10 @@ import { useAuth } from './AuthProvider';
 
 type RoundContext = {
   loading: boolean;
+  /** Laden fehlgeschlagen (meist keine Verbindung) und noch keine Daten da */
+  loadError: boolean;
+  /** Eigene, gerade gesendete Nachricht sofort anzeigen (falls Echtzeit hängt) */
+  addMessage: (m: Message) => void;
   /** true, wenn die Runde gelöscht wurde oder man kein Mitglied mehr ist */
   gone: boolean;
   round: Round | null;
@@ -44,6 +48,7 @@ type Change = { eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new: any; old: any };
 export function RoundProvider({ roundId, children }: { roundId: string; children: ReactNode }) {
   const { userId, blocked } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [gone, setGone] = useState(false);
   const [round, setRound] = useState<Round | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -63,7 +68,11 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
     return {
       rounds: async () => {
         const { data, error } = await supabase.from('rounds').select('*').eq('id', roundId).maybeSingle();
-        if (error) return;
+        if (error) {
+          setLoadError(true);
+          return;
+        }
+        setLoadError(false);
         setRound(data as Round | null);
         setGone(!data);
       },
@@ -140,6 +149,8 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
       channel.on('postgres_changes' as any, { event: '*', schema: 'public', table, filter }, handler as any);
     const byRound = `round_id=eq.${roundId}`;
 
+    // Echtzeit-Ereignisse, die während einer Verbindungsunterbrechung verpasst wurden, nachladen
+    let subscribedOnce = false;
     listen('rounds', `id=eq.${roundId}`, (c) => {
       if (c.eventType === 'DELETE') setGone(true);
       else setRound(c.new as Round);
@@ -157,6 +168,8 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
     listen('reports', byRound, () => refetch('reports'));
     // Positionen und Nachrichten kommen oft: direkt einarbeiten statt neu laden
     listen('locations', byRound, (c) => {
+      // Lösch-Ereignisse kommen ungefiltert: nur die eigene Runde berücksichtigen
+      if (c.eventType === 'DELETE' && c.old?.round_id && c.old.round_id !== roundId) return;
       setLocations((prev) => {
         const uid = (c.eventType === 'DELETE' ? c.old : c.new).user_id;
         const rest = prev.filter((l) => l.user_id !== uid);
@@ -170,7 +183,12 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
         return [c.new as Message, ...prev].slice(0, MESSAGE_LIMIT);
       });
     });
-    channel.subscribe();
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        if (subscribedOnce) reload();
+        subscribedOnce = true;
+      }
+    });
 
     const app = AppState.addEventListener('change', (s) => {
       if (s === 'active') {
@@ -241,8 +259,12 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
     storage.setItem(`dayhop:gelesen:${roundId}`, stamp);
   }, [roundId]);
 
+  const addMessage = useCallback((m: Message) => {
+    setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [m, ...prev].slice(0, MESSAGE_LIMIT)));
+  }, []);
+
   const value: RoundContext = {
-    loading, gone, round, members, stations, locations, checkins, messages, expenses, settlements, media, reports,
+    loading, loadError, addMessage, gone, round, members, stations, locations, checkins, messages, expenses, settlements, media, reports,
     me, isOrganizer: me?.role === 'organizer', profileOf, unread, markRead, isLive, tracking, askTracking, refreshTracking, reload,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

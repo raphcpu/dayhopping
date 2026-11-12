@@ -17,7 +17,7 @@ import { useRound } from '@/providers/RoundProvider';
 export default function ChatTab() {
   const c = useColors();
   const { userId, block } = useAuth();
-  const { round, messages, isOrganizer, profileOf, markRead, isLive } = useRound();
+  const { round, messages, isOrganizer, profileOf, markRead, isLive, addMessage } = useRound();
   const [text, setText] = useState('');
   const [announce, setAnnounce] = useState(false);
   const [sending, setSending] = useState(false);
@@ -42,9 +42,10 @@ export default function ChatTab() {
     const body = text.trim();
     if (!body || sending) return;
     setSending(true);
-    const { error } = await supabase.from('messages').insert({ round_id: round.id, user_id: userId, body, kind: announce ? 'announcement' : 'chat' });
+    const { data, error } = await supabase.from('messages').insert({ round_id: round.id, user_id: userId, body, kind: announce ? 'announcement' : 'chat' }).select().single();
     setSending(false);
-    if (error) return Alert.alert('Nicht gesendet', errorText(error));
+    if (error) return Alert.alert('Nicht gesendet', `${errorText(error)}\n\nDein Text bleibt im Eingabefeld.`);
+    if (data) addMessage(data as Message);
     setText('');
     setAnnounce(false);
   };
@@ -102,7 +103,7 @@ export default function ChatTab() {
             <Avatar profile={p} size={30} live={isLive(m.user_id)} />
           </Pressable>
         ) : <View style={{ width: 30 }} />)}
-        <Pressable onLongPress={() => onLongPress(m)} delayLongPress={350}
+        <Pressable onLongPress={() => onLongPress(m)} delayLongPress={350} accessibilityHint="Gedrückt halten für Optionen wie Melden oder Löschen"
           style={{ maxWidth: '78%', backgroundColor: mine ? c.bubbleMine : c.bubbleOther, borderRadius: 22, borderBottomRightRadius: mine ? 6 : 22, borderBottomLeftRadius: mine ? 22 : 6, ...(mine ? null : softShadow(c, 1)),
             paddingHorizontal: 14, paddingVertical: 9 }}>
           {!mine && startsGroup && <Text style={{ color: p.color, fontWeight: '700', fontSize: 13, marginBottom: 2 }}>{p.display_name}</Text>}

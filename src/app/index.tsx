@@ -25,6 +25,7 @@ export default function Home() {
   const router = useRouter();
   const { session, userId, profile } = useAuth();
   const [rounds, setRounds] = useState<Row[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [sheet, setSheet] = useState<'neu' | 'code' | null>(null);
   const [name, setName] = useState('');
@@ -35,10 +36,16 @@ export default function Home() {
 
   const load = useCallback(async () => {
     if (!userId) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('round_members')
       .select('role, round:rounds(*, round_members(count))')
       .eq('user_id', userId);
+    // Offline: nicht fälschlich "Noch kein Hop" zeigen, sondern einen Hinweis mit Neu-laden
+    if (error) {
+      setLoadFailed(true);
+      return;
+    }
+    setLoadFailed(false);
     const rows = ((data ?? []) as any[])
       .filter((r) => r.round)
       .map((r) => ({ ...r.round, role: r.role, memberCount: r.round.round_members?.[0]?.count ?? 1 }) as Row);
@@ -104,7 +111,11 @@ export default function Home() {
         keyExtractor={(r) => r.id}
         contentContainerStyle={{ paddingHorizontal: space.l, paddingBottom: insets.bottom + 110, gap: space.m, flexGrow: 1 }}
         refreshControl={<RefreshControl refreshing={refreshing} tintColor={c.accent} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
-        ListEmptyComponent={rounds ? (
+        ListEmptyComponent={loadFailed && !rounds?.length ? (
+          <EmptyState icon="cloud-offline-outline" title="Keine Verbindung" text="Deine Hops konnten nicht geladen werden. Prüf dein Internet.">
+            <Button title="Erneut versuchen" variant="soft" icon="refresh" onPress={load} />
+          </EmptyState>
+        ) : rounds ? (
           <EmptyState icon="footsteps" title="Noch kein Hop" text="Plane einen Tag mit mehreren Stationen oder tritt mit einem Einladungscode einem Hop bei." />
         ) : undefined}
         renderItem={({ item }) => (

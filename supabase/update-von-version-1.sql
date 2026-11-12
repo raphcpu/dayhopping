@@ -273,3 +273,17 @@ alter table public.stations add column if not exists bell text check (char_lengt
 -- Hops sind ab dem Anlegen dauerhaft aktiv (kein Starten/Beenden mehr)
 alter table public.rounds alter column status set default 'aktiv';
 update public.rounds set status = 'aktiv', started_at = coalesce(started_at, now()), ended_at = null where status <> 'aktiv';
+
+-- Indizes für Fremdschlüssel, die beim Laden und Löschen genutzt werden
+create index if not exists checkins_station_idx on public.checkins (station_id);
+create index if not exists checkins_user_idx on public.checkins (user_id);
+create index if not exists expense_shares_user_idx on public.expense_shares (user_id);
+create index if not exists expenses_payer_idx on public.expenses (payer_id);
+create index if not exists expenses_station_idx on public.expenses (station_id);
+create index if not exists locations_user_idx on public.locations (user_id);
+create index if not exists media_user_idx on public.media (user_id);
+create index if not exists media_station_idx on public.media (station_id);
+create index if not exists messages_user_idx on public.messages (user_id);
+create index if not exists settlements_from_idx on public.settlements (from_user);
+create index if not exists settlements_to_idx on public.settlements (to_user);
+create index if not exists blocks_blocked_idx on public.blocks (blocked_id);
