@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { StationMarker } from '@/components/StationMarker';
 import { mapsConfigured } from '@/lib/config';
 
 // Versteckte Testseite (dayhop://kartentest): zeigt nur eine Karte, ohne Anmeldung.
@@ -16,6 +17,14 @@ export default function MapTestScreen() {
           initialRegion={{ latitude: 53.5565, longitude: 9.987, latitudeDelta: 0.02, longitudeDelta: 0.02 }}
           onMapReady={() => setStatus('KARTE BEREIT')} onMapLoaded={() => setStatus('KARTE GELADEN')}>
           <Marker coordinate={{ latitude: 53.553, longitude: 9.9929 }} title="Jungfernstieg" />
+          {/* Station mit drei Blütenblättern: prüft die versetzten Marker */}
+          <StationMarker lat={53.5565} lng={9.987} number={2} color="#34C759" size={55} visited selected={false}
+            present={[
+              { id: 'a', display_name: 'Anna Berg', avatar_path: null, color: '#D6336C' },
+              { id: 'b', display_name: 'Ben', avatar_path: null, color: '#2F6FDE' },
+              { id: 'c', display_name: 'Cem Yilmaz', avatar_path: null, color: '#E8590C' },
+            ]}
+            onPress={() => setStatus('STATION ANGETIPPT')} onPetalPress={(id) => setStatus(`BLATT ${id} ANGETIPPT`)} />
           <Circle center={{ latitude: 53.5605, longitude: 9.981 }} radius={120} fillColor="rgba(91,61,245,0.25)" strokeColor="#5B3DF5" />
         </MapView>
       ) : <View style={{ flex: 1 }} />}

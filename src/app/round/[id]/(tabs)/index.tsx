@@ -215,7 +215,8 @@ export default function MapTab() {
           return (
             <StationMarker key={key} lat={s.lat} lng={s.lng} number={i + 1} color={col}
               size={glowLevel(present.length).markerSize + (on ? 6 : 0)} visited={myVisited.has(s.id)} selected={on} present={profiles}
-              onPress={() => { focusStation(i, false); setCardOpen(true); }} />
+              onPress={() => { focusStation(i, false); setCardOpen(true); }}
+              onPetalPress={(uid) => showProfile(uid, { onShowOnMap: () => focusPerson(uid) })} />
           );
         })}
         {locations.filter((l) => !checkedIn.has(l.user_id)).map((l) => {
