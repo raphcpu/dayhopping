@@ -31,6 +31,9 @@ function Header() {
 
 export default function TabsLayout() {
   const c = useColors();
+  const insets = useSafeAreaInsets();
+  // Feste Höhe über der System-Navigationsleiste: Inhalt sitzt mittig, nichts rutscht unter die Gestenleiste
+  const bottom = Math.max(insets.bottom, 10);
   const { unread } = useRound();
   const icon = (name: IconName) => {
     const TabIcon = ({ focused }: { focused: boolean }) => (
@@ -45,8 +48,9 @@ export default function TabsLayout() {
         tabBarActiveTintColor: c.accent,
         tabBarHideOnKeyboard: true,
         tabBarInactiveTintColor: c.muted,
-        tabBarStyle: { backgroundColor: c.card, borderTopWidth: 0, height: undefined, paddingTop: 6, ...softShadow(c, 2) },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginBottom: 2 },
+        tabBarStyle: { backgroundColor: c.card, borderTopWidth: 0, height: 62 + bottom, paddingTop: 8, paddingBottom: bottom, ...softShadow(c, 2) },
+        tabBarItemStyle: { justifyContent: 'center' },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginTop: 2 },
         sceneStyle: { backgroundColor: c.bg },
       }}>
       <Tabs.Screen name="index" options={{ title: 'Karte', tabBarIcon: icon('map') }} />
