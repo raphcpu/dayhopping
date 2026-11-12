@@ -4,10 +4,10 @@ import { Image } from 'expo-image';
 import * as Sharing from 'expo-sharing';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Pressable, ScrollView, StatusBar, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Pressable, StatusBar, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MenuHost, showMenu } from '@/components/Menu';
-import { Body, Button, Chip, EmptyState, IconButton, Sheet } from '@/components/ui';
+import { Body, Button, EmptyState, IconButton, Sheet } from '@/components/ui';
 import { errorText, formatTime } from '@/lib/format';
 import { confirmBlock, reportContent } from '@/lib/moderation';
 import { deleteMedia, pickFromLibrary, signedUrls, takeWithCamera, uploadToCollage } from '@/lib/media';
@@ -61,7 +61,6 @@ export default function CollageTab() {
   const { width, height } = useWindowDimensions();
   const { userId, block } = useAuth();
   const { round, media, stations, checkins, isOrganizer, profileOf } = useRound();
-  const [filter, setFilter] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [viewer, setViewer] = useState<number | null>(null);
@@ -69,8 +68,7 @@ export default function CollageTab() {
   const [sharing, setSharing] = useState(false);
   const pager = useRef<FlatList>(null);
 
-  const shown = useMemo(() => (filter ? media.filter((m) => m.station_id === filter) : media), [media, filter]);
-  const usedStations = useMemo(() => stations.filter((s) => media.some((m) => m.station_id === s.id)), [stations, media]);
+  const shown = media;
   const thumbs = useSigned(shown.map((m) => m.thumb_path ?? m.storage_path));
   const full = useSigned(viewer != null && shown[current] ? [shown[current].storage_path] : []);
 
@@ -168,12 +166,7 @@ export default function CollageTab() {
         data={rows}
         keyExtractor={(r) => r.key}
         contentContainerStyle={{ paddingHorizontal: space.s, paddingBottom: 110, gap: GAP, flexGrow: 1 }}
-        ListHeaderComponent={usedStations.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.s, paddingVertical: space.m, paddingHorizontal: space.s }}>
-            <Chip label={`Alle · ${media.length}`} active={filter === null} onPress={() => setFilter(null)} />
-            {usedStations.map((s) => <Chip key={s.id} label={s.name} active={filter === s.id} onPress={() => setFilter(s.id)} />)}
-          </ScrollView>
-        ) : <View style={{ height: space.s }} />}
+        ListHeaderComponent={<View style={{ height: space.s }} />}
         ListEmptyComponent={<EmptyState icon="images" title="Eure Collage ist noch leer" text="Fotos und Videos sehen nur die Leute in diesem Hop." />}
         renderItem={({ item: row }) => {
           const [a, b, d] = row.items;
