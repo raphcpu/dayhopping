@@ -80,15 +80,15 @@ export default function CostsTab() {
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ padding: space.l, paddingBottom: 110, gap: space.xl }}>
-        <Card style={{ backgroundColor: c.ink, borderWidth: 0, gap: space.l }}>
+        <Card style={{ backgroundColor: '#5B3DF5', borderWidth: 0, gap: space.l }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <View>
-              <Text style={{ color: c.bg, opacity: 0.7, fontSize: 13, fontWeight: '600' }}>GESAMT</Text>
-              <Text style={{ color: c.bg, fontFamily: fonts.display, fontSize: 34, letterSpacing: -1 }}>{formatEuro(total)}</Text>
+              <Text style={{ color: '#fff', opacity: 0.75, fontSize: 13, fontWeight: '600' }}>GESAMT</Text>
+              <Text style={{ color: '#fff', fontFamily: fonts.display, fontSize: 34, letterSpacing: -1 }}>{formatEuro(total)}</Text>
             </View>
             <Button small variant="soft" icon="share-outline" title="Export" onPress={() => setExportOpen(true)} style={{ alignSelf: 'flex-start' }} />
           </View>
-          <View style={{ backgroundColor: mine > 0 ? c.teal : mine < 0 ? c.danger : 'rgba(127,127,127,0.25)', borderRadius: radius.m, padding: space.m, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ backgroundColor: mine > 0 ? c.teal : mine < 0 ? c.danger : 'rgba(255,255,255,0.18)', borderRadius: radius.m, padding: space.m, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{mine > 0 ? 'Du bekommst noch' : mine < 0 ? 'Du schuldest noch' : 'Du bist ausgeglichen'}</Text>
             {mine !== 0 && <Text style={{ color: '#fff', fontSize: 19, fontWeight: '800' }}>{formatEuro(Math.abs(mine))}</Text>}
           </View>

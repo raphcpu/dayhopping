@@ -38,7 +38,10 @@ export default function ExpenseScreen() {
   const [stationId, setStationId] = useState<string | null>(
     existing ? existing.station_id : (checkins.find((ch) => ch.user_id === userId && !ch.left_at)?.station_id ?? null),
   );
-  const [mode, setMode] = useState<SplitMode>(existing?.split_mode ?? 'gleich');
+  const [mode, setMode] = useState<SplitMode>(
+    // „Anteile“ gibt es nicht mehr: alte Ausgaben öffnen mit ihren festen Beträgen
+    existing?.split_mode === 'anteile' ? 'betrag' : (existing?.split_mode ?? 'gleich'),
+  );
   const [selected, setSelected] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(members.map((m) => [m.user_id, existing ? existing.shares.some((s) => s.user_id === m.user_id) : true])),
   );
@@ -199,7 +202,7 @@ export default function ExpenseScreen() {
               {stations.filter((s) => (attendees.ever.get(s.id)?.size ?? 0) > 0).map((s) => {
                 const who = [...attendees.ever.get(s.id)!].filter((u) => memberIds.includes(u));
                 const on = who.length === ids.length && who.every((u) => selected[u]);
-                return <Chip key={s.id} icon="location" label={`Waren an ${s.name} (${who.length})`} active={on} onPress={() => selectOnly(who)} />;
+                return <Chip key={s.id} icon="location" label={`Waren bei ${s.name} (${who.length})`} active={on} onPress={() => selectOnly(who)} />;
               })}
               {stationId && (attendees.now.get(stationId)?.size ?? 0) > 0 && (
                 <Chip icon="radio-button-on" label={`Gerade dort (${attendees.now.get(stationId)!.size})`}
@@ -212,7 +215,7 @@ export default function ExpenseScreen() {
           )}
           {canEdit && (
             <Segmented value={mode} onChange={setMode}
-              options={[{ value: 'gleich', label: 'Gleichmäßig' }, { value: 'anteile', label: 'Anteile' }, { value: 'betrag', label: 'Beträge' }]} />
+              options={[{ value: 'gleich', label: 'Gleichmäßig' }, { value: 'betrag', label: 'Beträge' }]} />
           )}
           <Card style={{ paddingVertical: space.xs }}>
             {members.map((m, i) => {
