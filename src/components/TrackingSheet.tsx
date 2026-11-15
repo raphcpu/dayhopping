@@ -41,6 +41,7 @@ export function TrackingSheet({ visible, onClose }: { visible: boolean; onClose:
           ? 'DayHop erfasst Standortdaten, um deinen Live-Standort mit deiner Gruppe zu teilen und dich automatisch an Stationen einzuchecken – solange DayHop geöffnet ist.'
           : 'DayHop erfasst Standortdaten, um deinen Live-Standort mit deiner Gruppe zu teilen und dich automatisch an Stationen einzuchecken – auch wenn die App geschlossen ist oder nicht verwendet wird.'}
       </Body>
+      <Body muted small>Akku sparen: Bist du an einer Station eingecheckt, ortet DayHop nur noch alle paar Minuten und stromsparend. Sobald du die Station verlässt, wird automatisch wieder genau geortet.</Body>
       <View style={{ gap: space.m }}>
         {point('people', 'Alle in diesem Hop sehen live auf der Karte, wo du bist – sonst niemand.')}
         {point('checkmark-circle', 'Kommst du an einer Station an, wirst du automatisch eingecheckt.')}

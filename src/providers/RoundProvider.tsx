@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { isLiveAt } from '@/lib/presence';
+import { isLiveAt, isLiveCheckedIn } from '@/lib/presence';
 import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { requestTrackingPermissions, syncTracking, type TrackingState, watchForeground } from '@/lib/tracking';
@@ -237,7 +237,14 @@ export function RoundProvider({ roundId, children }: { roundId: string; children
     const t = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(t);
   }, []);
-  const liveSet = useMemo(() => new Set(locations.filter((l) => isLiveAt(l.recorded_at, now)).map((l) => l.user_id)), [locations, now]);
+  const liveSet = useMemo(() => {
+    const checkedIn = new Set(checkins.filter((ci) => !ci.left_at).map((ci) => ci.user_id));
+    return new Set(
+      locations
+        .filter((l) => isLiveAt(l.recorded_at, now) || (checkedIn.has(l.user_id) && isLiveCheckedIn(l.recorded_at, now)))
+        .map((l) => l.user_id),
+    );
+  }, [locations, checkins, now]);
   const isLive = useCallback((id: string | null) => !!id && liveSet.has(id), [liveSet]);
 
   const profiles = useMemo(() => new Map(members.map((m) => [m.user_id, m.profile])), [members]);

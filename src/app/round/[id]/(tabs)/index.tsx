@@ -23,6 +23,7 @@ import { radius, softShadow, space, useColors } from '@/lib/theme';
 import type { Profile } from '@/lib/types';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRound } from '@/providers/RoundProvider';
+import { useTrackingMode } from '@/lib/useTrackingMode';
 
 const CARD_GAP = 10;
 const CARD_WIDTH = Math.min(Dimensions.get('window').width - 56, 420);
@@ -65,6 +66,7 @@ function PersonMarkerOnMap(props: { profile: Profile; stale: boolean; mine: bool
 export default function MapTab() {
   const c = useColors();
   const router = useRouter();
+  const saving = useTrackingMode() === 'sparen';
   const { userId } = useAuth();
   const { round, stations, locations, checkins, members, messages, me, isOrganizer, profileOf, tracking, isLive } = useRound();
   const map = useRef<MapView>(null);
@@ -260,13 +262,15 @@ export default function MapTab() {
         )}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }} pointerEvents="box-none">
           <Pressable onPress={() => setTrackingOpen(true)} accessibilityRole="button"
-            accessibilityLabel={'live' in chip ? 'Standort wird live geteilt' : chip.text}
+            accessibilityLabel={'live' in chip ? (saving ? 'Standort wird geteilt, Akkusparmodus' : 'Standort wird live geteilt') : chip.text}
             style={{ backgroundColor: chip.bg, borderRadius: radius.pill, minHeight: 42, paddingHorizontal: 'live' in chip ? 14 : 16, flexDirection: 'row', alignItems: 'center', gap: 8, ...softShadow(c, 2) }}>
             {'live' in chip ? (
               // Kurz und knapp: grüner Punkt + „Live“
               <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: LIVE_GREEN, borderWidth: 2, borderColor: withAlpha(LIVE_GREEN, 0.35) }} />
             ) : <Ionicons name={chip.icon} size={17} color={chip.fg} />}
             <Text style={{ color: chip.fg, fontWeight: '800', fontSize: 14, letterSpacing: 'live' in chip ? 0.3 : 0 }}>{chip.text}</Text>
+            {/* Eingecheckt: Akkusparmodus, angedeutet durch ein kleines Blatt */}
+            {'live' in chip && saving && <Ionicons name="leaf" size={15} color={LIVE_GREEN} style={{ marginLeft: -2 }} />}
           </Pressable>
           <View style={{ gap: space.s }}>
             <View style={{ borderRadius: 24, ...softShadow(c, 2) }}>

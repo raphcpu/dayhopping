@@ -83,6 +83,14 @@ c = await q(`select station_id, left_at from checkins order by arrived_at`);
 ok(c.length === 2 && c[0].left_at !== null && c[1].station_id === s2 && c[1].left_at === null, 'Wechsel zu Station 2');
 await rep(53.5500, 9.9901, 10, 20); // veraltete Meldung
 ok(Math.abs((await q(`select lat from locations`))[0].lat - 53.56) < 1e-9, 'Veraltete Position überschreibt nicht');
+{
+  const st = async (lat, lng, acc, m) => (await q(`select report_location_state($1,$2,$3,null,null,$4) r`, [lat, lng, acc, t(m)]))[0].r;
+  const r1 = await st(53.5600, 10.0001, 10, 31);
+  ok(r1.active === 1 && r1.checkin?.station_id === s2 && r1.checkin.radius_m === 60, 'Melden mit Zustand: eingecheckt an Station 2 samt Mittelpunkt/Radius');
+  const r2 = await st(53.5600, 10.0030, 10, 32); // ~200 m weg
+  ok(r2.active === 1 && r2.checkin === null, 'Melden mit Zustand: nach Verlassen kein Check-in mehr');
+  await st(53.5600, 10.0000, 10, 33); // zurück: Besuch geht weiter
+}
 await q(`select manual_checkin($1, $2)`, [round, s1]);
 c = await q(`select station_id, automatic from checkins where left_at is null`);
 ok(c.length === 1 && c[0].station_id === s1 && c[0].automatic === false, 'Manueller Check-in');

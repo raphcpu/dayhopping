@@ -375,6 +375,35 @@ begin
 end;
 $$;
 
+-- ----------------------------------------------------------------------------
+-- Akkusparen: Standort melden und im selben Aufruf erfahren, ob und wo man gerade
+-- eingecheckt ist. Die App schaltet damit zwischen „unterwegs“ (häufig, genau) und
+-- „sparen“ (selten, stromsparend) um. report_location bleibt für ältere App-Versionen.
+-- ----------------------------------------------------------------------------
+create or replace function public.report_location_state(
+  p_lat double precision, p_lng double precision,
+  p_accuracy real default null, p_heading real default null, p_speed real default null,
+  p_recorded_at timestamptz default now())
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_count   integer;
+  v_checkin jsonb;
+begin
+  v_count := report_location(p_lat, p_lng, p_accuracy, p_heading, p_speed, p_recorded_at);
+  select jsonb_build_object('station_id', s.id, 'lat', s.lat, 'lng', s.lng, 'radius_m', s.radius_m)
+    into v_checkin
+    from checkins c
+    join stations s on s.id = c.station_id
+    join rounds r on r.id = c.round_id
+   where c.user_id = auth.uid() and c.left_at is null and r.status = 'aktiv'
+   order by c.arrived_at desc
+   limit 1;
+  return jsonb_build_object('active', v_count, 'checkin', v_checkin);
+end;
+$$;
+revoke all on function public.report_location_state(double precision, double precision, real, real, real, timestamptz) from public, anon;
+grant execute on function public.report_location_state(double precision, double precision, real, real, real, timestamptz) to authenticated;
+
 create or replace function public.join_round(p_code text)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare
