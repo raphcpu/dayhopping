@@ -15,9 +15,10 @@
     <link rel="apple-touch-icon" href="%BASE%icons/apple-touch-icon.png" />
     <link rel="icon" type="image/png" href="%BASE%icons/icon-192.png" />
     <style id="expo-reset">
+      /* Exakt den sichtbaren Bildschirm füllen (iPhone-Home-Bildschirm-App: kein Rutschen unter die Kante) */
       html, body { height: 100%; }
-      body { overflow: hidden; margin: 0; background: #F4F5F8; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
-      #root { display: flex; height: 100%; flex: 1; }
+      body { position: fixed; inset: 0; overflow: hidden; margin: 0; background: #F4F5F8; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+      #root { position: fixed; inset: 0; display: flex; height: 100dvh; }
       @media (prefers-color-scheme: dark) { body { background: #0F1117; } }
     </style>
   </head>

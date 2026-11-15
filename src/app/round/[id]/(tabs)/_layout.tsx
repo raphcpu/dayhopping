@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabButton, TabIcon } from '@/components/TabBarParts';
 import { IconButton, type IconName } from '@/components/ui';
@@ -33,6 +33,10 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   // Feste Höhe über der System-Navigationsleiste: Inhalt sitzt mittig, nichts rutscht unter die Gestenleiste
   const bottom = Math.max(insets.bottom, 10);
+  // Browser: Abstand direkt aus der CSS-Sicherheitszone (Home-Balken am iPhone), zuverlässiger als gemessen
+  const barSize = Platform.OS === 'web'
+    ? ({ height: 'calc(62px + max(12px, env(safe-area-inset-bottom)))', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' } as unknown as { height: number; paddingBottom: number })
+    : { height: 62 + bottom, paddingBottom: bottom };
   const { unread } = useRound();
   const icon = (name: IconName) => {
     const Icon = ({ focused }: { focused: boolean }) => <TabIcon name={name} focused={focused} />;
@@ -45,7 +49,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: c.accent,
         tabBarHideOnKeyboard: true,
         tabBarInactiveTintColor: c.muted,
-        tabBarStyle: { backgroundColor: c.card, borderTopWidth: 0, height: 62 + bottom, paddingTop: 8, paddingBottom: bottom, ...softShadow(c, 2) },
+        tabBarStyle: { backgroundColor: c.card, borderTopWidth: 0, ...barSize, paddingTop: 8, ...softShadow(c, 2) },
         tabBarItemStyle: { justifyContent: 'center' },
         tabBarIconStyle: { width: 64, height: 32 },
         tabBarLabelStyle: { fontSize: 12, fontWeight: '700', marginTop: 4 },
