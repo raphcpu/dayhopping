@@ -1,6 +1,6 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { KeyboardAvoidingView } from '@/lib/keyboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Body, Button, Field, Segmented } from '@/components/ui';
@@ -14,7 +14,8 @@ export default function Login() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { session, signIn, signUp } = useAuth();
+  const { session, signIn, signUp, resendConfirmation } = useAuth();
+  const [unconfirmed, setUnconfirmed] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,6 +29,7 @@ export default function Login() {
   const submit = async () => {
     setError(null);
     setInfo(null);
+    setUnconfirmed(false);
     if (mode === 'register' && name.trim().length < 2) return setError('Bitte gib deinen Namen ein.');
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError('Bitte gib eine gültige E-Mail-Adresse ein.');
     if (password.length < 6) return setError('Das Passwort braucht mindestens 6 Zeichen.');
@@ -35,11 +37,13 @@ export default function Login() {
     try {
       if (mode === 'login') await signIn(email, password);
       else if (await signUp(name, email, password)) {
-        setInfo('Fast geschafft: Bestätige den Link in der E-Mail, die wir dir geschickt haben, und melde dich dann an.');
+        setInfo('Fast geschafft: Tippe auf den Link in der E-Mail, die wir dir geschickt haben (auch im Spam-Ordner schauen). Danach kannst du dich anmelden.');
         setMode('login');
+        setUnconfirmed(true);
       }
     } catch (e) {
       setError(errorText(e));
+      if (/Email not confirmed/i.test((e as Error)?.message ?? '')) setUnconfirmed(true);
     } finally {
       setBusy(false);
     }
@@ -79,6 +83,20 @@ export default function Login() {
             returnKeyType="go" onSubmitEditing={submit} />
           {error && <Body style={{ color: c.danger }}>{error}</Body>}
           {info && <Body style={{ color: c.teal }}>{info}</Body>}
+          {unconfirmed && (
+            <Pressable accessibilityRole="button" hitSlop={8} disabled={busy}
+              onPress={async () => {
+                setError(null);
+                try {
+                  await resendConfirmation(email);
+                  setInfo('Neue Bestätigungs-E-Mail ist unterwegs. Der Link gilt 24 Stunden.');
+                } catch (e) {
+                  setError(errorText(e));
+                }
+              }}>
+              <Text style={{ color: '#C9CEDA', fontWeight: '700', textDecorationLine: 'underline' }}>Bestätigungs-E-Mail erneut senden</Text>
+            </Pressable>
+          )}
           <Button title={mode === 'login' ? 'Anmelden' : 'Konto erstellen'} onPress={submit} loading={busy} />
           <Body muted small style={{ textAlign: 'center' }}>
             {mode === 'register' ? 'Mit dem Erstellen des Kontos akzeptierst du die ' : 'Hier findest du die '}

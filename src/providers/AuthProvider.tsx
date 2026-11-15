@@ -1,7 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { registerForPush, unregisterPush } from '@/lib/push';
-import { supabase } from '@/lib/supabase';
+import { CONFIRM_REDIRECT, supabase } from '@/lib/supabase';
 import { stopBackgroundTracking, syncTracking } from '@/lib/tracking';
 import type { Profile } from '@/lib/types';
 
@@ -13,6 +13,8 @@ type AuthContext = {
   signIn: (email: string, password: string) => Promise<void>;
   /** Gibt true zurück, wenn erst noch die E-Mail bestätigt werden muss. */
   signUp: (name: string, email: string, password: string) => Promise<boolean>;
+  /** Bestätigungs-E-Mail erneut senden */
+  resendConfirmation: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   saveProfile: (patch: Partial<Pick<Profile, 'display_name' | 'avatar_path' | 'color'>>) => Promise<void>;
   /** IDs der Personen, die man blockiert hat */
@@ -61,10 +63,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { display_name: name.trim() } },
+      options: { data: { display_name: name.trim() }, emailRedirectTo: CONFIRM_REDIRECT },
     });
     if (error) throw error;
     return !data.session;
+  }, []);
+
+  const resendConfirmation = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim(), options: { emailRedirectTo: CONFIRM_REDIRECT } });
+    if (error) throw error;
   }, []);
 
   const signOut = useCallback(async () => {
@@ -117,8 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [userId]);
 
   const value = useMemo(
-    () => ({ loading, session, userId, profile, signIn, signUp, signOut, saveProfile, blocked, block, unblock, deleteAccount }),
-    [loading, session, userId, profile, signIn, signUp, signOut, saveProfile, blocked, block, unblock, deleteAccount],
+    () => ({ loading, session, userId, profile, signIn, signUp, resendConfirmation, signOut, saveProfile, blocked, block, unblock, deleteAccount }),
+    [loading, session, userId, profile, signIn, signUp, resendConfirmation, signOut, saveProfile, blocked, block, unblock, deleteAccount],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
