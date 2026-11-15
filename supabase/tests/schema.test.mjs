@@ -48,8 +48,17 @@ ok((await q(`select count(*)::int c from rounds`))[0].c === 0, 'Fremde sehen die
 ok((await q(`select count(*)::int c from profiles`))[0].c === 1, 'Fremde sehen nur ihr eigenes Profil');
 await fails(() => q(`insert into messages(round_id,user_id,body) values ($1,$2,'hi')`, [round, eve]), 'Fremde können nicht schreiben');
 await as(ben);
-await fails(() => q(`insert into stations(round_id,position,name,lat,lng) values ($1,1,'X',1,1)`, [round]), 'Mitglied kann keine Station anlegen');
+const own = (await q(`insert into stations(round_id,position,name,lat,lng) values ($1,9,'Bens Tipp',1,1) returning id, created_by`, [round]))[0];
+ok(own.created_by === ben, 'Mitglied kann eine Station anlegen (als Ersteller eingetragen)');
+await fails(() => q(`insert into stations(round_id,position,name,lat,lng,created_by) values ($1,9,'X',1,1,$2)`, [round, anna]), 'Station nicht im Namen anderer anlegen');
+ok((await q(`update stations set name = 'Bens Bar' where id = $1 returning id`, [own.id])).length === 1, 'Eigene Station bearbeiten');
+await fails(() => q(`select reorder_stations($1, $2)`, [round, [own.id]]), 'Mitglied kann die Reihenfolge nicht ändern');
 await fails(() => q(`insert into messages(round_id,user_id,kind,body) values ($1,$2,'announcement','x')`, [round, ben]), 'Mitglied kann keine Durchsage senden');
+await as(cem);
+ok((await q(`update stations set name = 'Gekapert' where id = $1 returning id`, [own.id])).length === 0, 'Fremde Station kann ein Mitglied nicht ändern');
+ok((await q(`delete from stations where id = $1 returning id`, [own.id])).length === 0, 'Fremde Station kann ein Mitglied nicht löschen');
+await as(ben);
+ok((await q(`delete from stations where id = $1 returning id`, [own.id])).length === 1, 'Eigene Station löschen');
 await as(anna);
 const s1 = (await q(`insert into stations(round_id,position,name,lat,lng) values ($1,1,'Café Elbe',53.5500,9.9900) returning id`, [round]))[0].id;
 const s2 = (await q(`insert into stations(round_id,position,name,lat,lng) values ($1,2,'Bar Alster',53.5600,10.0000) returning id`, [round]))[0].id;

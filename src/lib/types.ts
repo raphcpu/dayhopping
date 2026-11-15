@@ -20,6 +20,8 @@ export type Station = {
   color: string | null;
   floor: string | null;
   bell: string | null;
+  /** Wer die Station angelegt hat (darf sie auch als Mitglied bearbeiten) */
+  created_by?: string | null;
 };
 
 export type LiveLocation = {

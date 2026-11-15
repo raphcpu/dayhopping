@@ -291,8 +291,8 @@ export default function MapTab() {
         {stations.length === 0 ? (
           <Card style={{ marginHorizontal: space.l, gap: space.s }}>
             <Heading size={19}>Noch keine Stationen</Heading>
-            <Body muted>{isOrganizer ? 'Lege die erste Station an, dann erscheint hier die Route.' : 'Die Organisation hat noch keine Stationen angelegt.'}</Body>
-            {isOrganizer && <Button title="Station hinzufügen" icon="add" onPress={() => router.push(`/round/${round.id}/station`)} />}
+            <Body muted>Lege die erste Station an, dann erscheint hier die Route.</Body>
+            <Button title="Station hinzufügen" icon="add" onPress={() => router.push(`/round/${round.id}/station`)} />
           </Card>
         ) : !cardOpen ? null : (
           <FlatList
@@ -323,7 +323,7 @@ export default function MapTab() {
                         {s.planned_at ? `${formatTime(s.planned_at)} Uhr · Station ${index + 1} von ${stations.length}` : `Station ${index + 1} von ${stations.length}`}
                       </Body>
                     </View>
-                    {isOrganizer && <IconButton icon="create-outline" label="Station bearbeiten" onPress={() => router.push(`/round/${round.id}/station?stationId=${s.id}`)} />}
+                    {(isOrganizer || s.created_by === userId) && <IconButton icon="create-outline" label="Station bearbeiten" onPress={() => router.push(`/round/${round.id}/station?stationId=${s.id}`)} />}
                     <IconButton icon="close" label="Stationsinfo schließen" onPress={() => setCardOpen(false)} />
                   </View>
                   {(s.address || s.floor || s.bell) && (

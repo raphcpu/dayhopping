@@ -55,9 +55,12 @@ create table public.stations (
   radius_m   integer not null default 60 check (radius_m between 20 and 500),
   planned_at timestamptz,
   note       text,
+  -- Wer die Station angelegt hat (darf sie bearbeiten, auch ohne Organisator zu sein)
+  created_by uuid references public.profiles on delete set null default auth.uid(),
   created_at timestamptz not null default now()
 );
 create index on public.stations (round_id, position);
+create index on public.stations (created_by);
 
 -- Nur die jeweils letzte Position pro Person und Runde, kein Bewegungsprofil.
 create table public.locations (
@@ -814,10 +817,14 @@ create policy rounds_delete on public.rounds for delete to authenticated using (
 create policy members_read on public.round_members for select to authenticated using (is_member(round_id));
 
 create policy stations_read on public.stations for select to authenticated using (is_member(round_id));
-create policy stations_insert on public.stations for insert to authenticated with check (is_organizer(round_id));
+-- Alle Mitglieder dürfen Stationen anlegen; bearbeiten/löschen: Organisation alle, sonst die eigenen
+create policy stations_insert on public.stations for insert to authenticated
+  with check (is_organizer(round_id) or (is_member(round_id) and created_by = auth.uid()));
 create policy stations_update on public.stations for update to authenticated
-  using (is_organizer(round_id)) with check (is_organizer(round_id));
-create policy stations_delete on public.stations for delete to authenticated using (is_organizer(round_id));
+  using (is_organizer(round_id) or (is_member(round_id) and created_by = auth.uid()))
+  with check (is_organizer(round_id) or (is_member(round_id) and created_by = auth.uid()));
+create policy stations_delete on public.stations for delete to authenticated
+  using (is_organizer(round_id) or (is_member(round_id) and created_by = auth.uid()));
 
 create policy locations_read on public.locations for select to authenticated using (is_member(round_id));
 create policy checkins_read on public.checkins for select to authenticated using (is_member(round_id));

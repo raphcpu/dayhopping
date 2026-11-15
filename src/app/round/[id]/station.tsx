@@ -16,6 +16,7 @@ import { errorText, parseDay } from '@/lib/format';
 import { STATION_COLORS, STATION_RADIUS_M } from '@/lib/stationColors';
 import { supabase } from '@/lib/supabase';
 import { radius, space, useColors } from '@/lib/theme';
+import { useAuth } from '@/providers/AuthProvider';
 import { useRound } from '@/providers/RoundProvider';
 
 
@@ -26,7 +27,10 @@ export default function StationScreen() {
   const navigation = useNavigation();
   const { stationId } = useLocalSearchParams<{ stationId?: string }>();
   const { round, stations, locations, isOrganizer } = useRound();
+  const { userId } = useAuth();
   const existing = useMemo(() => stations.find((s) => s.id === stationId) ?? null, [stations, stationId]);
+  // Anlegen dürfen alle; bearbeiten die Organisation und wer die Station angelegt hat
+  const canEdit = isOrganizer || !existing || existing.created_by === userId;
   const map = useRef<MapView>(null);
 
   const [name, setName] = useState(existing?.name ?? '');
@@ -53,7 +57,7 @@ export default function StationScreen() {
   const [saved, setSaved] = useState(false);
 
   // Ungespeicherte Eingaben nicht stillschweigend verwerfen
-  const dirty = !saved && isOrganizer && (name !== (existing?.name ?? '') || address !== (existing?.address ?? '') || note !== (existing?.note ?? '')
+  const dirty = !saved && canEdit && (name !== (existing?.name ?? '') || address !== (existing?.address ?? '') || note !== (existing?.note ?? '')
     || (!!pin && (!existing || pin.latitude !== existing.lat || pin.longitude !== existing.lng)));
   usePreventRemove(dirty, ({ data }) => {
     showAlert('Änderungen verwerfen?', 'Die Station ist noch nicht gespeichert.', [
@@ -73,7 +77,7 @@ export default function StationScreen() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!round) return null;
-  if (!isOrganizer) return <View style={{ padding: space.xl }}><Body>Stationen kann nur die Organisation bearbeiten.</Body></View>;
+  if (!canEdit) return <View style={{ padding: space.xl }}><Body>Diese Station kann nur die Organisation oder wer sie angelegt hat bearbeiten.</Body></View>;
 
   const place = async (p: { latitude: number; longitude: number }, fillAddress = true) => {
     setPin(p);
@@ -140,7 +144,8 @@ export default function StationScreen() {
     const others = stations.filter((s) => s.id !== saved.id).map((s) => s.id);
     const order = [...others.slice(0, number - 1), saved.id, ...others.slice(number - 1)];
     const currentOrder = [...stations.map((s) => s.id), ...(existing ? [] : [saved.id])];
-    if (order.join() !== currentOrder.join()) {
+    // Die Reihenfolge der Route legt die Organisation fest; Mitglieder hängen neue Stationen hinten an
+    if (isOrganizer && order.join() !== currentOrder.join()) {
       const { error: orderError } = await supabase.rpc('reorder_stations', { p_round: round.id, p_ids: order });
       if (orderError) {
         setBusy(null);
@@ -200,7 +205,7 @@ export default function StationScreen() {
           </View>
         </View>
 
-        <View>
+        {isOrganizer && <View>
           <SectionLabel>Stationsnummer</SectionLabel>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.s }}>
             {Array.from({ length: count }, (_, k) => k + 1).map((n) => {
@@ -215,7 +220,7 @@ export default function StationScreen() {
             })}
           </View>
           <Text style={{ fontSize: 13, color: c.muted, marginTop: space.s }}>Reihenfolge auf der Route. Die anderen Stationen rücken entsprechend auf.</Text>
-        </View>
+        </View>}
 
         <View>
           <SectionLabel>Leuchtfarbe</SectionLabel>

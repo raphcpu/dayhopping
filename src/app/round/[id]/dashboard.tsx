@@ -260,10 +260,10 @@ export default function Dashboard() {
                       s.present.length ? `${s.present.length} jetzt da` : null, s.avgStayMs != null ? `Ø ${formatDuration(s.avgStayMs)}` : null].filter(Boolean).join(' · ')}
                   </Body>
                 </View>
-                {isOrganizer && (
+                {(isOrganizer || s.station.created_by === userId) && (
                   <View style={{ flexDirection: 'row' }}>
-                    <IconButton icon="arrow-up" label="Nach vorn" size={38} color={i === 0 ? c.line : c.ink} onPress={() => move(i, -1)} />
-                    <IconButton icon="arrow-down" label="Nach hinten" size={38} color={i === sStats.length - 1 ? c.line : c.ink} onPress={() => move(i, 1)} />
+                    {isOrganizer && <IconButton icon="arrow-up" label="Nach vorn" size={38} color={i === 0 ? c.line : c.ink} onPress={() => move(i, -1)} />}
+                    {isOrganizer && <IconButton icon="arrow-down" label="Nach hinten" size={38} color={i === sStats.length - 1 ? c.line : c.ink} onPress={() => move(i, 1)} />}
                     <IconButton icon="create-outline" label="Bearbeiten" size={38} onPress={() => router.push(`/round/${round.id}/station?stationId=${s.station.id}`)} />
                   </View>
                 )}
@@ -271,7 +271,7 @@ export default function Dashboard() {
             </View>
           ))}
         </Card>
-        {isOrganizer && <Button title="Station hinzufügen" variant="soft" icon="add" onPress={() => router.push(`/round/${round.id}/station`)} style={{ marginTop: space.s }} />}
+        <Button title="Station hinzufügen" variant="soft" icon="add" onPress={() => router.push(`/round/${round.id}/station`)} style={{ marginTop: space.s }} />
       </View>
 
       {/* Mitglieder mit Live-Status */}

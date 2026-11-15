@@ -422,3 +422,20 @@ end;
 $$;
 revoke all on function public.report_location_state(double precision, double precision, real, real, real, timestamptz) from public, anon;
 grant execute on function public.report_location_state(double precision, double precision, real, real, real, timestamptz) to authenticated;
+-- ----------------------------------------------------------------------------
+-- Alle Mitglieder dürfen Stationen anlegen. Bearbeiten und löschen: die Organisation
+-- alle, Mitglieder ihre eigenen. Die Reihenfolge der Route bestimmt die Organisation.
+-- ----------------------------------------------------------------------------
+alter table public.stations add column if not exists created_by uuid references public.profiles on delete set null default auth.uid();
+create index if not exists stations_created_by_idx on public.stations (created_by);
+
+drop policy if exists stations_insert on public.stations;
+drop policy if exists stations_update on public.stations;
+drop policy if exists stations_delete on public.stations;
+create policy stations_insert on public.stations for insert to authenticated
+  with check (is_organizer(round_id) or (is_member(round_id) and created_by = auth.uid()));
+create policy stations_update on public.stations for update to authenticated
+  using (is_organizer(round_id) or (is_member(round_id) and created_by = auth.uid()))
+  with check (is_organizer(round_id) or (is_member(round_id) and created_by = auth.uid()));
+create policy stations_delete on public.stations for delete to authenticated
+  using (is_organizer(round_id) or (is_member(round_id) and created_by = auth.uid()));
