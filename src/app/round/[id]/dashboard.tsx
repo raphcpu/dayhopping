@@ -22,6 +22,8 @@ import { fonts, radius, softShadow, space, useColors } from '@/lib/theme';
 import type { Member, Report } from '@/lib/types';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRound } from '@/providers/RoundProvider';
+import { QrCode } from '@/components/QrCode';
+import { inviteUrl } from '@/lib/invite';
 
 export default function Dashboard() {
   const c = useColors();
@@ -33,6 +35,7 @@ export default function Dashboard() {
   const [trackingOpen, setTrackingOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [announceOpen, setAnnounceOpen] = useState(false);
+  const [showQr, setShowQr] = useState(true);
   const [announcement, setAnnouncement] = useState('');
   const [name, setName] = useState(round?.name ?? '');
   const [day, setDay] = useState<Date>(round ? parseDay(round.day) : new Date());
@@ -65,7 +68,7 @@ export default function Dashboard() {
   };
 
   const invite = () =>
-    Share.share({ message: `Komm mit zu „${round.name}“ am ${formatDay(round.day)}! Öffne DayHop, tippe auf „Code eingeben“ und gib ${round.invite_code} ein.` });
+    Share.share({ message: `Komm mit zu „${round.name}“ am ${formatDay(round.day)}! Tippe auf den Link, um dabei zu sein: ${inviteUrl(round.invite_code)}\n\nOder in DayHop „Code eingeben“ und ${round.invite_code} eintippen.` });
 
   const copy = async () => {
     await Clipboard.setStringAsync(round.invite_code);
@@ -200,8 +203,18 @@ export default function Dashboard() {
       <View>
         <SectionLabel>Einladen</SectionLabel>
         <Card style={{ gap: space.m, alignItems: 'center' }}>
+          {showQr && (
+            <View style={{ padding: 6, borderRadius: 18, backgroundColor: '#fff' }}>
+              <QrCode value={inviteUrl(round.invite_code)} size={232} />
+            </View>
+          )}
           <Text selectable style={{ fontFamily: fonts.displayHeavy, fontSize: 44, letterSpacing: 8, color: c.ink }}>{round.invite_code}</Text>
-          <Body muted small style={{ textAlign: 'center' }}>Wer diesen Code in DayHop eingibt, ist dabei. Gib ihn nur an deine Gruppe weiter.</Body>
+          <Body muted small style={{ textAlign: 'center' }}>
+            {showQr
+              ? 'QR-Code mit der Handykamera scannen oder den Code in DayHop eingeben. Nur an deine Gruppe weitergeben.'
+              : 'Wer diesen Code in DayHop eingibt, ist dabei. Gib ihn nur an deine Gruppe weiter.'}
+          </Body>
+          <Button title={showQr ? 'QR-Code ausblenden' : 'QR-Code zeigen'} variant="soft" icon="qr-code-outline" onPress={() => setShowQr((v) => !v)} style={{ alignSelf: 'stretch' }} />
           <View style={{ flexDirection: 'row', gap: space.s, alignSelf: 'stretch' }}>
             <Button title={copied ? 'Kopiert' : 'Kopieren'} variant="soft" icon={copied ? 'checkmark' : 'copy-outline'} onPress={copy} style={{ flex: 1 }} />
             <Button title="Teilen" icon="share-outline" onPress={invite} style={{ flex: 1 }} />

@@ -7,6 +7,7 @@ import { DateField } from '@/components/DateField';
 import { Avatar, Body, Button, Card, EmptyState, Field, Heading, Sheet } from '@/components/ui';
 import { WaveText } from '@/components/WaveText';
 import { errorText, formatDay, toDay } from '@/lib/format';
+import { takePendingInvite } from '@/lib/invite';
 import { storage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { fonts, space, useColors } from '@/lib/theme';
@@ -53,6 +54,14 @@ export default function Home() {
     const rank = { aktiv: 0, geplant: 1, beendet: 2 } as const;
     rows.sort((a, b) => rank[a.status] - rank[b.status] || (a.status === 'beendet' ? b.day.localeCompare(a.day) : a.day.localeCompare(b.day)));
     setRounds(rows);
+
+    // Über einen QR-Code/Einladungslink gekommen und erst angemeldet? Jetzt beitreten.
+    const invite = await takePendingInvite();
+    if (invite) {
+      autoOpenDone = true;
+      router.push(`/join/${invite}`);
+      return;
+    }
 
     if (!autoOpenDone) {
       autoOpenDone = true;
