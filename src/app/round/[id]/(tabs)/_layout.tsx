@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TabButton, TabIcon } from '@/components/TabBarParts';
 import { IconButton, type IconName } from '@/components/ui';
 import { WaveText } from '@/components/WaveText';
 import { fonts, softShadow, space, useColors } from '@/lib/theme';
@@ -35,10 +35,8 @@ export default function TabsLayout() {
   const bottom = Math.max(insets.bottom, 10);
   const { unread } = useRound();
   const icon = (name: IconName) => {
-    const TabIcon = ({ focused }: { focused: boolean }) => (
-      <Ionicons name={(focused ? name : `${name}-outline`) as IconName} size={25} color={focused ? c.accent : c.muted} />
-    );
-    return TabIcon;
+    const Icon = ({ focused }: { focused: boolean }) => <TabIcon name={name} focused={focused} />;
+    return Icon;
   };
   return (
     <Tabs
@@ -49,7 +47,9 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: c.muted,
         tabBarStyle: { backgroundColor: c.card, borderTopWidth: 0, height: 62 + bottom, paddingTop: 8, paddingBottom: bottom, ...softShadow(c, 2) },
         tabBarItemStyle: { justifyContent: 'center' },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+        tabBarIconStyle: { width: 64, height: 32 },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '700', marginTop: 4 },
+        tabBarButton: (props) => <TabButton {...props} />,
         sceneStyle: { backgroundColor: c.bg },
       }}>
       <Tabs.Screen name="index" options={{ title: 'Karte', tabBarIcon: icon('map') }} />
