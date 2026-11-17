@@ -16,8 +16,9 @@ import { useAuth } from '@/providers/AuthProvider';
 
 type Row = Round & { memberCount: number; role: string };
 
-// Nur beim ersten Anzeigen nach dem App-Start direkt in einen Hop springen,
-// nicht wenn man bewusst zur Übersicht zurückkehrt.
+// Nur beim ersten Anzeigen nach dem App-Start direkt in einen Hop springen – und nur,
+// wenn heute einer läuft. Sonst startet die App bei „Deine Hops“. Kehrt man bewusst
+// zur Übersicht zurück, bleibt man dort.
 let autoOpenDone = false;
 
 export default function Home() {
@@ -65,10 +66,17 @@ export default function Home() {
 
     if (!autoOpenDone) {
       autoOpenDone = true;
-      // Laufender Hop zuerst, sonst der zuletzt geöffnete (sofern nicht beendet)
-      const last = await storage.getItem(`dayhop:letzter-hop:${userId}`);
-      const target = rows.find((r) => r.status === 'aktiv') ?? rows.find((r) => r.id === last && r.status !== 'beendet');
-      if (target) router.push(`/round/${target.id}`);
+      // Läuft heute ein Hop? Bei mehreren den zuletzt geöffneten davon.
+      // Nach Mitternacht (bis 6 Uhr) zählt der Hop vom Vortag noch als laufend
+      const now = new Date();
+      const days = new Set([toDay(now)]);
+      if (now.getHours() < 6) days.add(toDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)));
+      const running = rows.filter((r) => r.status !== 'beendet' && days.has(r.day));
+      if (running.length) {
+        const last = await storage.getItem(`dayhop:letzter-hop:${userId}`);
+        const target = running.find((r) => r.id === last) ?? running[0];
+        router.push(`/round/${target.id}`);
+      }
     }
   }, [userId, router]);
 
